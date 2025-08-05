@@ -4,7 +4,8 @@ import AppSidebar from '@/components/AppSidebar.vue'
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink, BreadcrumbList,
+  BreadcrumbLink,
+  BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
@@ -43,6 +44,7 @@ import {
       </div>
     </SidebarInset>
   </SidebarProvider>
+  <Toaster />
 </template>
 
 <style scoped></style>

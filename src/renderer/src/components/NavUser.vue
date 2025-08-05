@@ -36,7 +36,7 @@ const props = defineProps<{
     avatar: string
   }
 }>()
-
+console.log(props)
 const { isMobile } = useSidebar()
 </script>
 

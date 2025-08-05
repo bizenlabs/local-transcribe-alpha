@@ -1,7 +1,17 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import electronUpdater, { type AppUpdater, UpdateCheckResult } from 'electron-updater'
+import log from 'electron-log/main'
+
+log.initialize()
+log.info('App starting...')
+
+export function getAutoUpdater(): AppUpdater {
+  const { autoUpdater } = electronUpdater
+  return autoUpdater
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -48,6 +58,21 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+
+  getAutoUpdater()
+    .checkForUpdatesAndNotify()
+    .then((result: UpdateCheckResult | null) => {
+      if (result && result.isUpdateAvailable) {
+        dialog
+          .showMessageBox({
+            title: 'Updates Available',
+            message: 'Restart App to update.',
+          })
+          .then(() => {
+            console.log('Restart App to update.')
+          })
+      }
+    })
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
