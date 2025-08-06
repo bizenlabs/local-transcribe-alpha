@@ -11,8 +11,8 @@ import {
   Map,
   PieChart,
   Settings2,
-  SquareTerminal,
-} from "lucide-vue-next"
+  SquareTerminal
+} from 'lucide-vue-next'
 import NavMain from '@/components/NavMain.vue'
 import NavProjects from '@/components/NavProjects.vue'
 import NavUser from '@/components/NavUser.vue'
@@ -23,141 +23,141 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarRail,
+  SidebarRail
 } from '@/components/ui/sidebar'
 
 const props = withDefaults(defineProps<SidebarProps>(), {
-  collapsible: "icon",
+  collapsible: 'icon'
 })
 
 // This is sample data.
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: 'gabbar',
+    email: 'm@bizenlabs.com',
+    avatar: '/avatars/shadcn.jpg'
   },
   teams: [
     {
-      name: "Acme Inc",
+      name: 'Acme Inc',
       logo: GalleryVerticalEnd,
-      plan: "Enterprise",
+      plan: 'Enterprise'
     },
     {
-      name: "Acme Corp.",
+      name: 'Acme Corp.',
       logo: AudioWaveform,
-      plan: "Startup",
+      plan: 'Startup'
     },
     {
-      name: "Evil Corp.",
+      name: 'Evil Corp.',
       logo: Command,
-      plan: "Free",
-    },
+      plan: 'Free'
+    }
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
+      title: 'Playground',
+      url: '#',
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
+          title: 'Transcribe',
+          url: '#'
+        }
+        // {
+        //   title: 'Starred',
+        //   url: '#'
+        // },
+        // {
+        //   title: 'Settings',
+        //   url: '#'
+        // }
+      ]
     },
     {
-      title: "Models",
-      url: "#",
+      title: 'Models',
+      url: '#',
       icon: Bot,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: 'Genesis',
+          url: '#'
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: 'Explorer',
+          url: '#'
         },
         {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
+          title: 'Quantum',
+          url: '#'
+        }
+      ]
     },
     {
-      title: "Documentation",
-      url: "#",
+      title: 'Documentation',
+      url: '#',
       icon: BookOpen,
       items: [
         {
-          title: "Introduction",
-          url: "#",
+          title: 'Introduction',
+          url: '#'
         },
         {
-          title: "Get Started",
-          url: "#",
+          title: 'Get Started',
+          url: '#'
         },
         {
-          title: "Tutorials",
-          url: "#",
+          title: 'Tutorials',
+          url: '#'
         },
         {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
+          title: 'Changelog',
+          url: '#'
+        }
+      ]
     },
     {
-      title: "Settings",
-      url: "#",
+      title: 'Settings',
+      url: '#',
       icon: Settings2,
       items: [
         {
-          title: "General",
-          url: "#",
+          title: 'General',
+          url: '#'
         },
         {
-          title: "Team",
-          url: "#",
+          title: 'Team',
+          url: '#'
         },
         {
-          title: "Billing",
-          url: "#",
+          title: 'Billing',
+          url: '#'
         },
         {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
+          title: 'Limits',
+          url: '#'
+        }
+      ]
+    }
   ],
   projects: [
     {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
+      name: 'Design Engineering',
+      url: '#',
+      icon: Frame
     },
     {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
+      name: 'Sales & Marketing',
+      url: '#',
+      icon: PieChart
     },
     {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
+      name: 'Travel',
+      url: '#',
+      icon: Map
+    }
+  ]
 }
 </script>
 

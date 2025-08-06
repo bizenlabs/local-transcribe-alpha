@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import electronUpdater, { type AppUpdater, UpdateCheckResult } from 'electron-updater'
 import log from 'electron-log/main'
+import { modelService } from './asr/model.service'
 
 log.initialize()
 log.info('App starting...')
@@ -66,7 +67,7 @@ app.whenReady().then(() => {
         dialog
           .showMessageBox({
             title: 'Updates Available',
-            message: 'Restart App to update.',
+            message: 'Restart App to update.'
           })
           .then(() => {
             console.log('Restart App to update.')
@@ -76,6 +77,9 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // IPC test
+  registerIPC()
 
   createWindow()
 
@@ -97,3 +101,14 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+function registerIPC(): void {
+  ipcMain.handle('asr:getModels', async () => {
+    console.log('asr:getModels')
+    return modelService.getModels()
+  })
+
+  ipcMain.handle('asr:downloadModel', async (_event, ...args) => {
+    await modelService.downloadModel(args[0])
+  })
+}
