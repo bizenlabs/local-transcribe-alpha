@@ -10,7 +10,7 @@ import {
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
 import { ref } from 'vue'
-import ModelManager from '@/screens/ModelManager.vue'
+import AudioModelManager from '@/screens/transcription/AudioModelManager.vue'
 
 const selectedScreen = ref('model-manager')
 </script>
@@ -40,7 +40,8 @@ const selectedScreen = ref('model-manager')
       </header>
       <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div v-if="selectedScreen === 'model-manager'">
-          <ModelManager> </ModelManager>
+          <RouterView />
+          <!--          <AudioModelManager> </AudioModelManager>-->
         </div>
         <!--        <div class="grid auto-rows-min gap-4 md:grid-cols-3">-->
         <!--          <div class="aspect-video rounded-xl bg-muted/50" />-->

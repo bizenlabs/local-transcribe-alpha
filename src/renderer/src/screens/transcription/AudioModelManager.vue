@@ -10,7 +10,7 @@ import {
 import { Download, BadgeCheck, CircleDashed } from 'lucide-vue-next'
 
 import { onMounted, ref } from 'vue'
-import { Model } from '../../../types/model'
+import { Model } from '../../../../types/model'
 
 const models = ref<Model[]>([])
 const modelDownloadInProgress = ref<string>('')

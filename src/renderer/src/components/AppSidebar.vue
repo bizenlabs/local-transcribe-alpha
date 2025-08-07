@@ -25,6 +25,7 @@ import {
   SidebarHeader,
   SidebarRail
 } from '@/components/ui/sidebar'
+import type { Component } from 'vue'
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: 'icon'
@@ -39,40 +40,26 @@ const data = {
   },
   teams: [
     {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise'
-    },
-    {
-      name: 'Acme Corp.',
+      name: 'Bizen Labs',
       logo: AudioWaveform,
-      plan: 'Startup'
-    },
-    {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free'
+      plan: 'Enterprise'
     }
   ],
   navMain: [
     {
-      title: 'Playground',
+      title: 'Transcribe',
       url: '#',
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: 'Transcribe',
-          url: '#'
+          title: 'File',
+          url: 'audio-file-transcribe'
+        },
+        {
+          title: 'Realtime',
+          url: 'audio-realtime-transcribe'
         }
-        // {
-        //   title: 'Starred',
-        //   url: '#'
-        // },
-        // {
-        //   title: 'Settings',
-        //   url: '#'
-        // }
       ]
     },
     {
@@ -81,42 +68,46 @@ const data = {
       icon: Bot,
       items: [
         {
-          title: 'Genesis',
-          url: '#'
+          title: 'Audio',
+          url: 'audio-model-manager'
         },
         {
-          title: 'Explorer',
-          url: '#'
-        },
-        {
-          title: 'Quantum',
-          url: '#'
+          title: 'Text',
+          url: 'text-model-manager'
         }
+        // {
+        //   title: 'Explorer',
+        //   url: '#'
+        // },
+        // {
+        //   title: 'Quantum',
+        //   url: '#'
+        // }
       ]
     },
-    {
-      title: 'Documentation',
-      url: '#',
-      icon: BookOpen,
-      items: [
-        {
-          title: 'Introduction',
-          url: '#'
-        },
-        {
-          title: 'Get Started',
-          url: '#'
-        },
-        {
-          title: 'Tutorials',
-          url: '#'
-        },
-        {
-          title: 'Changelog',
-          url: '#'
-        }
-      ]
-    },
+    // {
+    //   title: 'Documentation',
+    //   url: '#',
+    //   icon: BookOpen,
+    //   items: [
+    //     {
+    //       title: 'Introduction',
+    //       url: '#'
+    //     },
+    //     {
+    //       title: 'Get Started',
+    //       url: '#'
+    //     },
+    //     {
+    //       title: 'Tutorials',
+    //       url: '#'
+    //     },
+    //     {
+    //       title: 'Changelog',
+    //       url: '#'
+    //     }
+    //   ]
+    // },
     {
       title: 'Settings',
       url: '#',
@@ -124,20 +115,20 @@ const data = {
       items: [
         {
           title: 'General',
-          url: '#'
-        },
-        {
-          title: 'Team',
-          url: '#'
-        },
-        {
-          title: 'Billing',
-          url: '#'
-        },
-        {
-          title: 'Limits',
-          url: '#'
+          url: 'general-settings'
         }
+        // {
+        //   title: 'Team',
+        //   url: '#'
+        // },
+        // {
+        //   title: 'Billing',
+        //   url: '#'
+        // },
+        // {
+        //   title: 'Limits',
+        //   url: '#'
+        // }
       ]
     }
   ],
@@ -164,11 +155,21 @@ const data = {
 <template>
   <Sidebar v-bind="props">
     <SidebarHeader>
+      <!--      <div-->
+      <!--        class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"-->
+      <!--      >-->
+      <!--        <AudioWaveform class="size-4"></AudioWaveform>-->
+      <!--        &lt;!&ndash;        <component :is="activeTeam.logo" class="size-4" />&ndash;&gt;-->
+      <!--      </div>-->
+      <!--      <div class="grid flex-1 text-left text-sm leading-tight">-->
+      <!--        <span class="truncate font-medium"> Bizen Labs </span>-->
+      <!--        <span class="truncate text-xs">Local Transcribe</span>-->
+      <!--      </div>-->
       <TeamSwitcher :teams="data.teams" />
     </SidebarHeader>
     <SidebarContent>
       <NavMain :items="data.navMain" />
-      <NavProjects :projects="data.projects" />
+      <!--      <NavProjects :projects="data.projects" />-->
     </SidebarContent>
     <SidebarFooter>
       <NavUser :user="data.user" />
