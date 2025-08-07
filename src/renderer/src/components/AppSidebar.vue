@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { SidebarProps } from '@/components/ui/sidebar'
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProps
+} from '@/components/ui/sidebar'
 
 import {
   AudioWaveform,
@@ -12,7 +17,6 @@ import {
 } from 'lucide-vue-next'
 import NavMain from '@/components/NavMain.vue'
 import NavUser from '@/components/NavUser.vue'
-import TeamSwitcher from '@/components/TeamSwitcher.vue'
 
 import {
   Sidebar,
@@ -150,17 +154,29 @@ const data = {
 <template>
   <Sidebar v-bind="props">
     <SidebarHeader>
-      <!--      <div-->
-      <!--        class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"-->
-      <!--      >-->
-      <!--        <AudioWaveform class="size-4"></AudioWaveform>-->
-      <!--        &lt;!&ndash;        <component :is="activeTeam.logo" class="size-4" />&ndash;&gt;-->
-      <!--      </div>-->
-      <!--      <div class="grid flex-1 text-left text-sm leading-tight">-->
-      <!--        <span class="truncate font-medium"> Bizen Labs </span>-->
-      <!--        <span class="truncate text-xs">Local Transcribe</span>-->
-      <!--      </div>-->
-      <TeamSwitcher :teams="data.teams" />
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" as-child>
+            <a href="#">
+              <div
+                class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"
+              >
+                <AudioWaveform color="hsl(150 100% 50%)" class="size-4" />
+              </div>
+
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-medium">Bizen Labs</span>
+                <span class="truncate text-xs">Local first</span>
+              </div>
+
+              <!--              <div class="flex flex-col gap-0.5 leading-none">-->
+              <!--                <span class="font-semibold">Documentation</span>-->
+              <!--                <span class="">v1.0.0</span>-->
+              <!--              </div>-->
+            </a>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
       <NavMain :items="data.navMain" />

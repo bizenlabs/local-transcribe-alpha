@@ -9,9 +9,22 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
-import { ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 
-const selectedScreen = ref('model-manager')
+const route = useRoute()
+
+const breadcrumbs = {
+  '/audio-file-transcribe': ['Transcribe', 'File'],
+  '/audio-realtime-transcribe': ['Transcribe', 'Realtime'],
+  '/audio-model-manager': ['Models', 'Audio'],
+  '/text-model-manager': ['Models', 'Text'],
+  '/general-settings': ['Settings', 'General']
+}
+
+const breadcrumb = computed(() => {
+  return breadcrumbs[route.fullPath]
+})
 </script>
 
 <template>
@@ -27,21 +40,18 @@ const selectedScreen = ref('model-manager')
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem class="hidden md:block">
-                <BreadcrumbLink href="#"> Building Your Application </BreadcrumbLink>
+                <BreadcrumbLink href="#"> {{ breadcrumb[0] }} </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                <BreadcrumbPage>{{ breadcrumb[1] }}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </div>
       </header>
       <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div v-if="selectedScreen === 'model-manager'">
-          <RouterView />
-          <!--          <AudioModelManager> </AudioModelManager>-->
-        </div>
+        <RouterView />
         <!--        <div class="grid auto-rows-min gap-4 md:grid-cols-3">-->
         <!--          <div class="aspect-video rounded-xl bg-muted/50" />-->
         <!--          <div class="aspect-video rounded-xl bg-muted/50" />-->
