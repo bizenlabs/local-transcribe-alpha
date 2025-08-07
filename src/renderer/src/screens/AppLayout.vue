@@ -10,7 +10,6 @@ import {
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
 import { ref } from 'vue'
-import AudioModelManager from '@/screens/transcription/AudioModelManager.vue'
 
 const selectedScreen = ref('model-manager')
 </script>
