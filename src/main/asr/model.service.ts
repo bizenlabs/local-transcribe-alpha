@@ -17,7 +17,6 @@ import {
   PreTrainedModel,
   PreTrainedTokenizer,
   Processor,
-  TextStreamer,
   WhisperForConditionalGeneration
 } from '@huggingface/transformers'
 import * as fs from 'node:fs'
