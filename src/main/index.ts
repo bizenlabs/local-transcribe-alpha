@@ -111,4 +111,27 @@ function registerIPC(): void {
   ipcMain.handle('asr:downloadModel', async (_event, ...args) => {
     await modelService.downloadModel(args[0])
   })
+
+  ipcMain.handle('dialog:openFile', handleFileOpen)
+
+  ipcMain.handle('asr:file', async (_event, ...args) => {
+    return await modelService.transcribeFile(args[0], args[1])
+  })
+}
+
+async function handleFileOpen(): Promise<string> {
+  console.log('Opening file...')
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    filters: [
+      {
+        name: 'Audio Files',
+        extensions: ['wav']
+        // extensions: ['wav', 'mp3', 'flac', 'ogg', 'm4a']
+      }
+    ]
+  })
+  if (!canceled) {
+    return filePaths[0]
+  }
+  return ''
 }

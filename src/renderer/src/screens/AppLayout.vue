@@ -23,7 +23,7 @@ const breadcrumbs = {
 }
 
 const breadcrumb = computed(() => {
-  return breadcrumbs[route.fullPath]
+  return breadcrumbs[route.fullPath] ? breadcrumbs[route.fullPath] : ['', '']
 })
 </script>
 
@@ -40,7 +40,7 @@ const breadcrumb = computed(() => {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem class="hidden md:block">
-                <BreadcrumbLink href="#"> {{ breadcrumb[0] }} </BreadcrumbLink>
+                <BreadcrumbLink> {{ breadcrumb[0] }} </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
               <BreadcrumbItem>

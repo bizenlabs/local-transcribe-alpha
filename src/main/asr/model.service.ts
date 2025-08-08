@@ -9,15 +9,19 @@ import { Model } from '../../types/model'
 
 import { snapshotDownload } from '@huggingface/hub'
 import {
+  AutomaticSpeechRecognitionOutput,
   AutoProcessor,
   AutoTokenizer,
   full,
+  pipeline,
   PreTrainedModel,
   PreTrainedTokenizer,
   Processor,
   TextStreamer,
   WhisperForConditionalGeneration
 } from '@huggingface/transformers'
+import * as fs from 'node:fs'
+import wavefile from 'wavefile'
 
 class ModelService {
   private static _instance: ModelService
@@ -146,56 +150,103 @@ class ModelService {
     return Promise.resolve(ModelService.models)
   }
 
-  async transcribeAudio(audio: any, language: string = 'en'): Promise<string[] | void> {
-    if (ModelService.processing) {
-      console.warn('Model is already processing another audio input.')
-      return Promise.resolve()
+  async transcribeFile(audioFilePath: string, modelName: string): Promise<string[]> {
+    console.log('Transcribe audio file:', audioFilePath, 'with model:', modelName)
+    const buffer = fs.readFileSync(audioFilePath)
+    const wav = new wavefile.WaveFile(buffer)
+    wav.toBitDepth('32f')
+    wav.toSampleRate(16000)
+
+    let audioData = wav.getSamples(true)
+    if (Array.isArray(audioData)) {
+      console.log('Transcribe audio file is array:', audioData.length)
+      audioData = audioData[0]
     }
-    console.log('Language:', language)
-    ModelService.processing = true
 
-    const streamer = new TextStreamer(ModelService.tokenizer, {
-      skip_prompt: true,
-      skip_special_tokens: true
-      // callback_function: (text: string) => {
-      //   console.log('Transcription:', text)
-      // }
-    })
-
-    const inputs = await ModelService.processor(audio)
-
-    const outputs = await ModelService.model.generate({
-      ...inputs,
-      max_new_tokens: 64,
-      streamer
-    })
+    const transcriber = await pipeline('automatic-speech-recognition', modelName)
+    const output = await transcriber(audioData, { chunk_length_s: 30, stride_length_s: 5 })
+    const finalOutput: string[] = []
+    if (Array.isArray(output)) {
+      ;(output as AutomaticSpeechRecognitionOutput[]).forEach((o) => {
+        finalOutput.push(o.text)
+      })
+    } else {
+      finalOutput.push((output as AutomaticSpeechRecognitionOutput).text)
+    }
+    console.log('Transcribe audio file:', finalOutput)
+    return Promise.resolve(finalOutput)
+    // const streamer = new TextStreamer(ModelService.tokenizer, {
+    //   skip_prompt: true,
+    //   skip_special_tokens: true
+    // })
+    //
+    // const inputs = await ModelService.processor(audioData)
+    //
+    // const outputs = await ModelService.model.generate({
+    //   ...inputs,
+    //   max_new_tokens: 64,
+    //   streamer
+    // })
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const decoded = ModelService.tokenizer.batch_decode(outputs, {
-      skip_special_tokens: true
-    })
-    console.log(decoded)
-    ModelService.processing = false
-    return Promise.resolve(decoded)
-
-    // console.log('Transcribe audio:', audio)
-    // console.warn('transcribeAudio is not implemented yet')
-    // return Promise.resolve(['Transcription not implemented yet'])
-    // const transcriber = await pipeline(
-    //   'automatic-speech-recognition',
-    //   'onnx-community/whisper-tiny_timestamped'
-    // )
-    // const start = performance.now()
-    // const output = await transcriber(audio, {
-    //   return_timestamps: true,
-    //   chunk_length_s: 30
+    // const decoded = ModelService.tokenizer.batch_decode(outputs, {
+    //   skip_special_tokens: true
     // })
-    // const end = performance.now()
-    // console.log(`Execution duration: ${(end - start) / 1000} seconds`)
-    // console.log(output)
-    // return Promise.resolve(['output'])
+
+    // console.log(decoded)
   }
+
+  // async transcribeAudio(audio: any, language: string = 'en'): Promise<string[] | void> {
+  //   if (ModelService.processing) {
+  //     console.warn('Model is already processing another audio input.')
+  //     return Promise.resolve()
+  //   }
+  //   console.log('Language:', language)
+  //   ModelService.processing = true
+  //
+  //   const streamer = new TextStreamer(ModelService.tokenizer, {
+  //     skip_prompt: true,
+  //     skip_special_tokens: true
+  //     // callback_function: (text: string) => {
+  //     //   console.log('Transcription:', text)
+  //     // }
+  //   })
+  //
+  //   const inputs = await ModelService.processor(audio)
+  //
+  //   const outputs = await ModelService.model.generate({
+  //     ...inputs,
+  //     max_new_tokens: 64,
+  //     streamer
+  //   })
+  //
+  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //   // @ts-ignore
+  //   const decoded = ModelService.tokenizer.batch_decode(outputs, {
+  //     skip_special_tokens: true
+  //   })
+  //   console.log(decoded)
+  //   ModelService.processing = false
+  //   return Promise.resolve(decoded)
+  //
+  //   // console.log('Transcribe audio:', audio)
+  //   // console.warn('transcribeAudio is not implemented yet')
+  //   // return Promise.resolve(['Transcription not implemented yet'])
+  //   // const transcriber = await pipeline(
+  //   //   'automatic-speech-recognition',
+  //   //   'onnx-community/whisper-tiny_timestamped'
+  //   // )
+  //   // const start = performance.now()
+  //   // const output = await transcriber(audio, {
+  //   //   return_timestamps: true,
+  //   //   chunk_length_s: 30
+  //   // })
+  //   // const end = performance.now()
+  //   // console.log(`Execution duration: ${(end - start) / 1000} seconds`)
+  //   // console.log(output)
+  //   // return Promise.resolve(['output'])
+  // }
 
   async getDownloadedModels(): Promise<Model[]> {
     const modelsInStore: Model[] = storage.getSync('models')
@@ -242,26 +293,3 @@ class ModelService {
 }
 
 export const modelService = ModelService.Instance
-
-// class AutomaticSpeechRecognitionPipeline {
-//   static model_id =
-//     '/Users/kgidwani/Library/Application Support/local-transcribe/models/models--onnx-community--whisper-tiny_timestamped/snapshots/517244293732ee2d58139af5814231b7e6830a0d'
-//   static tokenizer: PreTrainedTokenizer
-//   static processor: Processor
-//   static model: PreTrainedModel
-//
-//   static async getInstance(
-//     model_id: string
-//   ): Promise<[PreTrainedTokenizer, Processor, PreTrainedModel]> {
-//     this.tokenizer ??= await AutoTokenizer.from_pretrained(model_id, {})
-//     this.processor ??= await AutoProcessor.from_pretrained(model_id, {})
-//     this.model ??= await WhisperForConditionalGeneration.from_pretrained(model_id, {
-//       dtype: {
-//         encoder_model: 'fp32', // 'fp16' works too
-//         decoder_model_merged: 'q4' // or 'fp32' ('fp16' is broken)
-//       }
-//     })
-//
-//     return Promise.all([this.tokenizer, this.processor, this.model])
-//   }
-// }

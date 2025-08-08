@@ -2,13 +2,18 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  openFile: () => ipcRenderer.invoke('dialog:openFile')
+}
 
 // ASR APIs for renderer
 const asr = {
   getModels: () => ipcRenderer.invoke('asr:getModels'),
   downloadModel: async (modelName: string): Promise<void> =>
-    await ipcRenderer.invoke('asr:downloadModel', modelName)
+    await ipcRenderer.invoke('asr:downloadModel', modelName),
+  transcribeFile: async (audioFilePath: string, modelName: string): Promise<string[]> => {
+    return await ipcRenderer.invoke('asr:file', audioFilePath, modelName)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
