@@ -5,11 +5,23 @@ import { onMounted, ref } from 'vue'
 import { AudioLines, FolderPlus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Model } from '../../../../types/model'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 
+const heading = ref<string>('File Transcription')
 const filePath = ref('')
-const transcription = ref([''])
+const transcription = ref<string[]>([])
+const transcribing = ref<boolean>(false)
 
 const models = ref<Model[]>([])
+const selectedModel = ref<number>(0)
 
 function getModelList(): void {
   console.log('getModelList')
@@ -18,23 +30,34 @@ function getModelList(): void {
 
 onMounted(() => {
   getModelList()
+  if (models.value.length > 0) {
+    selectedModel.value = models.value[0].id
+  }
 })
 
 async function selectFile(): Promise<void> {
   filePath.value = await window.api.openFile()
 }
 
+function clearSelectedFile(): void {
+  filePath.value = ''
+  transcription.value = []
+}
+
 async function transcribeFile(): Promise<void> {
-  if (models.value[0]?.modelPath) {
-    await window.asr.transcribeFile(filePath.value, models.value[0]?.modelPath).then((result) => {
+  transcribing.value = true
+  let model = models.value.find((model) => model.id === selectedModel.value)
+  if (model && model.modelPath) {
+    await window.asr.transcribeFile(filePath.value, model.modelPath).then((result) => {
       transcription.value = result
+      transcribing.value = false
     })
   }
 }
 </script>
 
 <template>
-  <h4>File Transcription</h4>
+  <h4>{{ heading }}</h4>
   <Separator orientation="horizontal" />
 
   <div class="col-span-full">
@@ -50,35 +73,56 @@ async function transcribeFile(): Promise<void> {
         </span>
       </div>
     </div>
+  </div>
 
-    <div v-if="filePath" class="hidden md:block">
-      <div class="col-span-3 lg:col-span-4 lg:border-l">
-        <div class="h-full px-3 py-2 lg:px-8">
-          <div class="h-full space-y-6">
-            <div class="space-between flex items-center">
-              <p class="h-full space-y-3 text-l font-bold tracking-tight text-gray-900">
-                Transcription Configuration
-              </p>
-              <div class="ml-auto mr-4">
-                <Button @click="transcribeFile">
-                  <AudioLines class="mr-2 h-4 w-4" />
-                  Start Transcription
-                </Button>
-              </div>
-            </div>
-          </div>
-          <br />
-          <p class="text-sm text-gray-600">
-            <span class="font-bold text-gray-950">Selected File:</span> {{ filePath }}
-            <Trash class="ml-2 text-sm text-red-600 inline" @click="filePath = ''" />
-          </p>
-        </div>
+  <section v-if="filePath" id="transcription">
+    <!--    <div>-->
+    <!--      <p class="text-lg font-medium">Transcription Configuration</p>-->
+    <!--      <p class="text-sm text-muted-foreground">-->
+    <!--        Select the right configuration for your transcription.-->
+    <!--      </p>-->
+    <!--    </div>-->
+    <!--    <Separator />-->
+    <Label class="m-2">File</Label>
+    <div class="flex items-center space-x-2 text-sm text-gray-500">
+      <AudioLines class="inline" /> {{ filePath }}
+      <Trash class="ml-2 text-red-400 inline" :size="18" @click="clearSelectedFile" />
+      <div class="ml-auto mr-4">
+        <Button @click="transcribeFile">
+          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': transcribing }" />
+          Start Transcription
+        </Button>
       </div>
     </div>
-  </div>
-  <div>
-    {{ transcription }}
-  </div>
+
+    <div v-if="models.length > 0">
+      <Label class="m-2" for="select-model">Model</Label>
+      <Select id="select-model" v-model="selectedModel">
+        <SelectTrigger class="w-[280px]">
+          <SelectValue placeholder="Select Model" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem
+              v-for="model in models"
+              :key="model.id"
+              :value="model.id"
+              :disabled="!model.modelPath"
+            >
+              {{ model.name }}
+            </SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
+  </section>
+  <section>
+    <div v-if="transcription && transcription.length > 0">
+      <div v-for="(snippet, index) in transcription" :key="index">
+        {{ snippet }}
+      </div>
+    </div>
+  </section>
 </template>
 
 <style scoped></style>
