@@ -125,7 +125,7 @@ async function handleFileOpen(): Promise<string> {
     filters: [
       {
         name: 'Audio Files',
-        extensions: ['wav']
+        extensions: ['wav', 'mp3']
         // extensions: ['wav', 'mp3', 'flac', 'ogg', 'm4a']
       }
     ]

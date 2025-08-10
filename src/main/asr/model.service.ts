@@ -22,6 +22,8 @@ import {
 import * as fs from 'node:fs'
 import wavefile from 'wavefile'
 
+import { convertToWavType } from '../utils/fileConverter'
+
 class ModelService {
   private static _instance: ModelService
   private readonly modelsDirectoryPath: string = resolve(app.getPath('userData'), 'models')
@@ -151,8 +153,14 @@ class ModelService {
 
   async transcribeFile(audioFilePath: string, modelName: string): Promise<string[]> {
     console.log('Transcribe audio file:', audioFilePath, 'with model:', modelName)
-    const buffer = fs.readFileSync(audioFilePath)
+    console.log('Buffer input:', fs.readFileSync(audioFilePath).length)
+    const convertedAudioFilePath = await convertToWavType(audioFilePath)
+
+    console.log('convertedAudioFilePath Transcribe audio file:', convertedAudioFilePath)
+    const buffer = fs.readFileSync(convertedAudioFilePath)
+    console.log('Buffer:', buffer.length)
     const wav = new wavefile.WaveFile(buffer)
+    console.log('Wav file is a WAV file.')
     wav.toBitDepth('32f')
     wav.toSampleRate(16000)
 

@@ -1,6 +1,6 @@
 {
   "name": "local-transcribe-alpha",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -40,6 +40,7 @@
     "electron-json-storage": "^4.6.0",
     "electron-log": "^5.4.2",
     "electron-updater": "^6.3.9",
+    "ffmpeg-static": "^5.2.0",
     "lucide-vue-next": "^0.536.0",
     "reka-ui": "^2.4.1",
     "tailwind-merge": "^3.3.1",

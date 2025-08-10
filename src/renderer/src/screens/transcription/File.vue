@@ -25,14 +25,16 @@ const selectedModel = ref<number>(0)
 
 function getModelList(): void {
   console.log('getModelList')
-  window.asr.getModels().then((result) => (models.value = result))
+  window.asr.getModels().then((result) => {
+    if (result.length > 0) {
+      models.value = result
+      selectedModel.value = models.value[0].id
+    }
+  })
 }
 
 onMounted(() => {
   getModelList()
-  if (models.value.length > 0) {
-    selectedModel.value = models.value[0].id
-  }
 })
 
 async function selectFile(): Promise<void> {
