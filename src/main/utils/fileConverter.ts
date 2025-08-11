@@ -27,16 +27,6 @@ export const convertToWavType = async (inputFilePath: string): Promise<string> =
 
     const command = `${ffmpegBin} -nostats -loglevel error -y -i "${inputFilePath}" -ar 16000 -ac 1 -c:a pcm_s16le "${outputFilePath}"`
     console.log('FFMPEG command:', command)
-
-    // exec(command, (error, stdout, stderr) => {
-    //   if (error) {
-    //     console.log(error)
-    //     throw error
-    //   }
-    //   console.log(`stdout: ${stdout}`)
-    //   console.error(`stderr: ${stderr}`)
-    //   console.log('exec error:', error)
-    // })
     execSync(command)
     console.log(`Converted to a new WAV file: ${outputFilePath}`)
     return outputFilePath
