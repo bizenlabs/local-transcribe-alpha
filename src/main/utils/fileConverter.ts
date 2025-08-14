@@ -10,12 +10,12 @@ export const convertToWavType = async (inputFilePath: string): Promise<string> =
   console.log('Input File Exists')
 
   const fileExtension = path.extname(inputFilePath).toLowerCase()
-  const workDir: string = resolve(app.getPath('userData'), 'audio')
 
   if (fileExtension === '.wav') {
     console.log(`Input file is already WAV: ${inputFilePath}`)
     return inputFilePath
   } else {
+    const workDir: string = resolve(app.getPath('userData'), 'audio')
     console.log(`Input file is not WAV converting: ${inputFilePath}`)
     const outputFilePath = path.join(
       path.dirname(workDir),

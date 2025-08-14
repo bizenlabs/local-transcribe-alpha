@@ -164,13 +164,15 @@ class ModelService {
 
   async transcribeFileWhisper(audioFilePath: string, modelName: string): Promise<string[]> {
     console.log('Madal:', modelName, audioFilePath)
+    const convertedAudioFilePath = await convertToWavType(audioFilePath)
+    console.log('convertedAudioFilePath:', convertedAudioFilePath)
     const modelPath = path
       .join(__dirname, '../../resources/bin/ggml-tiny.en.bin')
       .replace('app.asar', 'app.asar.unpacked')
     const whisperParams = {
       language: 'en',
       model: modelPath,
-      fname_inp: audioFilePath,
+      fname_inp: convertedAudioFilePath,
       use_gpu: true,
       flash_attn: false,
       no_prints: true,
