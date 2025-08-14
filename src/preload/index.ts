@@ -13,6 +13,9 @@ const asr = {
     await ipcRenderer.invoke('asr:downloadModel', modelName),
   transcribeFile: async (audioFilePath: string, modelName: string): Promise<string[]> => {
     return await ipcRenderer.invoke('asr:file', audioFilePath, modelName)
+  },
+  transcribeFileWhisper: async (audioFilePath: string, modelName: string): Promise<string[]> => {
+    return await ipcRenderer.invoke('asr:file-whisper', audioFilePath, modelName)
   }
 }
 

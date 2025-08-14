@@ -3,11 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import electronUpdater, { type AppUpdater, UpdateCheckResult } from 'electron-updater'
-import log from 'electron-log/main'
 import { modelService } from './asr/model.service'
-
-log.initialize()
-log.info('App starting...')
 
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
@@ -23,8 +19,9 @@ function createWindow(): void {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      preload: join(__dirname, '../preload/index.mjs'),
+      sandbox: false,
+      nodeIntegration: false
     }
   })
 
@@ -116,6 +113,10 @@ function registerIPC(): void {
 
   ipcMain.handle('asr:file', async (_event, ...args) => {
     return await modelService.transcribeFile(args[0], args[1])
+  })
+
+  ipcMain.handle('asr:file-whisper', async (_event, ...args) => {
+    return await modelService.transcribeFileWhisper(args[0], args[1])
   })
 }
 

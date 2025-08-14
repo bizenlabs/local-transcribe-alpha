@@ -56,6 +56,16 @@ async function transcribeFile(): Promise<void> {
     })
   }
 }
+async function transcribeFileWhisper(): Promise<void> {
+  transcribing.value = true
+  let model = models.value.find((model) => model.id === selectedModel.value)
+  if (model && model.modelPath) {
+    await window.asr.transcribeFileWhisper(filePath.value, model.modelPath).then((result) => {
+      transcription.value = result
+      transcribing.value = false
+    })
+  }
+}
 </script>
 
 <template>
@@ -92,7 +102,13 @@ async function transcribeFile(): Promise<void> {
       <div class="ml-auto mr-4">
         <Button @click="transcribeFile">
           <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': transcribing }" />
-          Start Transcription
+          JS Transcription
+        </Button>
+        <br />
+        <br />
+        <Button @click="transcribeFileWhisper">
+          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': transcribing }" />
+          C++ Transcription
         </Button>
       </div>
     </div>

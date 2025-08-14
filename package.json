@@ -1,6 +1,6 @@
 {
   "name": "local-transcribe-alpha",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -9,6 +9,7 @@
     "type": "git",
     "url": "https://github.com/bizenlabs/local-transcribe-alpha"
   },
+  "type": "module",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -38,7 +39,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "electron-json-storage": "^4.6.0",
-    "electron-log": "^5.4.2",
     "electron-updater": "^6.3.9",
     "ffmpeg-static": "^5.2.0",
     "lucide-vue-next": "^0.536.0",

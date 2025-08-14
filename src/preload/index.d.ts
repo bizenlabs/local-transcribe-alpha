@@ -9,7 +9,8 @@ declare global {
     asr: {
       getModels: () => Promise<Model[]>,
       downloadModel: (modelName: string) => Promise<void>,
-      transcribeFile: (audioFilePath: string, modelName: string) => Promise<string[]>
+      transcribeFile: (audioFilePath: string, modelName: string) => Promise<string[]>,
+      transcribeFileWhisper: (audioFilePath: string, modelName: string) => Promise<string[]>
     }
   }
 }

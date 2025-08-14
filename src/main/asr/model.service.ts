@@ -1,12 +1,10 @@
 import { app } from 'electron'
-import { resolve } from 'path'
+import path, { resolve } from 'path'
 
 import storage from 'electron-json-storage'
-import log from 'electron-log/main'
 
 import { modelsData as baseModelData } from './models'
 import { Model } from '../../types/model'
-
 import { snapshotDownload } from '@huggingface/hub'
 import {
   AutomaticSpeechRecognitionOutput,
@@ -23,6 +21,19 @@ import * as fs from 'node:fs'
 import wavefile from 'wavefile'
 
 import { convertToWavType } from '../utils/fileConverter'
+import { createRequire } from 'node:module'
+import { promisify } from 'node:util'
+
+let binPath: string
+if (process.platform == 'darwin') {
+  binPath = path
+    .join(__dirname, '../../resources/bin/mac-whisper/addon.node')
+    .replace('app.asar', 'app.asar.unpacked')
+} else {
+  binPath = path
+    .join(__dirname, '../../resources/bin/windows/addon.node')
+    .replace('app.asar', 'app.asar.unpacked')
+}
 
 class ModelService {
   private static _instance: ModelService
@@ -36,7 +47,7 @@ class ModelService {
   MAX_NEW_TOKENS = 64
 
   private constructor() {
-    log.info('ModelService constructor')
+    console.log('ModelService constructor')
     storage.setDataPath(this.modelsDirectoryPath)
     storage.has('models', function (_error: never, hasKey: boolean) {
       if (!hasKey) {
@@ -151,6 +162,39 @@ class ModelService {
     return Promise.resolve(ModelService.models)
   }
 
+  async transcribeFileWhisper(audioFilePath: string, modelName: string): Promise<string[]> {
+    console.log('Madal:', modelName, audioFilePath)
+    const modelPath = path
+      .join(__dirname, '../../resources/bin/ggml-tiny.en.bin')
+      .replace('app.asar', 'app.asar.unpacked')
+    const whisperParams = {
+      language: 'en',
+      model: modelPath,
+      fname_inp: audioFilePath,
+      use_gpu: true,
+      flash_attn: false,
+      no_prints: true,
+      comma_in_time: false,
+      translate: true,
+      no_timestamps: false,
+      detect_language: false,
+      audio_ctx: 0,
+      max_len: 0,
+      progress_callback: (progress) => {
+        console.log(`progress: ${progress}%`)
+      }
+    }
+    const require = createRequire(import.meta.url)
+    console.log('bin path', binPath)
+    const { whisper } = require(binPath)
+    // console.log('whisper', whisper)
+    // const { promisify } = require('util')
+    const whisperAsync = promisify(whisper)
+    const result = await whisperAsync(whisperParams)
+    console.log(result.transcription)
+    return Promise.resolve(result.transcription)
+  }
+
   async transcribeFile(audioFilePath: string, modelName: string): Promise<string[]> {
     console.log('Transcribe audio file:', audioFilePath, 'with model:', modelName)
     console.log('Buffer input:', fs.readFileSync(audioFilePath).length)
@@ -169,8 +213,10 @@ class ModelService {
       console.log('Transcribe audio file is array:', audioData.length)
       audioData = audioData[0]
     }
-
-    const transcriber = await pipeline('automatic-speech-recognition', modelName)
+    const startTime = performance.now()
+    const transcriber = await pipeline('automatic-speech-recognition', modelName, {
+      device: 'cpu'
+    })
     const output = await transcriber(audioData, { chunk_length_s: 30, stride_length_s: 5 })
     const finalOutput: string[] = []
     if (Array.isArray(output)) {
@@ -181,6 +227,8 @@ class ModelService {
       finalOutput.push((output as AutomaticSpeechRecognitionOutput).text)
     }
     console.log('Transcribe audio file:', finalOutput)
+    const endTime = performance.now()
+    console.log(`Time Taken ${endTime - startTime} milliseconds`)
     return Promise.resolve(finalOutput)
     // const streamer = new TextStreamer(ModelService.tokenizer, {
     //   skip_prompt: true,
