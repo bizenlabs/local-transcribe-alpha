@@ -1,9 +1,9 @@
-export interface Model {
+export type Model = {
   id: number
   name: string
-  model: string
-  modelPath?: string
-  language?: string
   description?: string
+  url: string
+  downloadPath?: string | null
   size?: string
+  language?: string
 }

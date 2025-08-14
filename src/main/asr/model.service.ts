@@ -3,9 +3,9 @@ import path, { resolve } from 'path'
 
 import storage from 'electron-json-storage'
 
-import { modelsData as baseModelData } from './models'
-import { Model } from '../../types/model'
-import { snapshotDownload } from '@huggingface/hub'
+import { modelsData as appModelList } from './models'
+import type { Model } from '../../types/model'
+
 import {
   AutomaticSpeechRecognitionOutput,
   AutoProcessor,
@@ -23,6 +23,8 @@ import wavefile from 'wavefile'
 import { convertToWavType } from '../utils/fileConverter'
 import { createRequire } from 'node:module'
 import { promisify } from 'node:util'
+import { downloadFile } from '../utils/fileDownloader'
+import { DownloaderReport } from 'nodejs-file-downloader'
 
 let binPath: string
 if (process.platform == 'darwin') {
@@ -51,12 +53,44 @@ class ModelService {
     storage.setDataPath(this.modelsDirectoryPath)
     storage.has('models', function (_error: never, hasKey: boolean) {
       if (!hasKey) {
-        storage.set('models', baseModelData)
-        ModelService.models = baseModelData
+        storage.set('models', appModelList)
+        ModelService.models = appModelList
       } else {
+        const storageModels: Model[] = storage.getSync('models')
+        storageModels.forEach((storeModel: Model) => {
+          const index = appModelList.findIndex((model) => {
+            return model.name === storeModel.name && storeModel.downloadPath != ''
+          })
+          if (index !== -1) {
+            console.log('Model found Index', index)
+            appModelList[index].downloadPath = storeModel.downloadPath
+          }
+        })
+        storage.set('models', appModelList)
         ModelService.models = storage.getSync('models')
       }
     })
+  }
+  async downloadModel(
+    model: Model,
+    onProgress: (percentage: string) => void
+  ): Promise<DownloaderReport> {
+    console.log('Download model:', model)
+    const downloadReport = await downloadFile(model.url, this.getModelsDirectoryPath(), onProgress)
+
+    if (downloadReport && downloadReport.filePath) {
+      const modelsInStore: Model[] = storage.getSync('models')
+      console.log('modelsInStore', modelsInStore)
+      const index = modelsInStore.findIndex((storeModel) => {
+        return storeModel.id === model.id
+      })
+      if (index !== -1) {
+        modelsInStore[index].downloadPath = downloadReport.filePath
+        storage.set('models', modelsInStore)
+        ModelService.models = modelsInStore
+      }
+    }
+    return downloadReport
   }
 
   // private syncStorageConfigWithAppConfig(): void {
@@ -82,32 +116,6 @@ class ModelService {
 
   public static get Instance(): ModelService {
     return this._instance || (this._instance = new this())
-  }
-
-  async downloadModel(modelName: string): Promise<void> {
-    const dir = await snapshotDownload({
-      repo: modelName,
-      cacheDir: this.getModelsDirectoryPath()
-    })
-    const modelsInStore: Model[] = storage.getSync('models')
-    console.log('modelsInStore', modelsInStore)
-    const index = modelsInStore.findIndex((model) => model.model === modelName)
-    console.log('index', index)
-    modelsInStore[index].modelPath = dir
-    console.log('modelsInStore:updated', modelsInStore)
-    storage.set('models', modelsInStore)
-    ModelService.models = modelsInStore
-
-    // indexOf((model) => model.model === modelName)
-    // modelsInStore.find((model) => model.model === modelName)!.modelPath = dir
-    // storage.set('models', modelsInStore, (error) => {
-    //   if (error) {
-    //     console.error('Error updating model download status:', error)
-    //   } else {
-    //     console.log(`Model ${modelName} downloaded and status updated.`)
-    //   }
-    // })
-    console.log('downloadModel', dir)
   }
 
   // private updateDownloadedModelList(modelName: string, modelPath: string) {
@@ -162,13 +170,13 @@ class ModelService {
     return Promise.resolve(ModelService.models)
   }
 
-  async transcribeFileWhisper(audioFilePath: string, modelName: string): Promise<string[]> {
-    console.log('Madal:', modelName, audioFilePath)
+  async transcribeFileWhisper(audioFilePath: string, modelPath: string): Promise<string[]> {
+    console.log('Madal:', modelPath, audioFilePath)
     const convertedAudioFilePath = await convertToWavType(audioFilePath)
     console.log('convertedAudioFilePath:', convertedAudioFilePath)
-    const modelPath = path
-      .join(__dirname, '../../resources/bin/ggml-tiny.en.bin')
-      .replace('app.asar', 'app.asar.unpacked')
+    // const modelPath = path
+    //   .join(__dirname, '../../resources/bin/ggml-tiny.en.bin')
+    //   .replace('app.asar', 'app.asar.unpacked')
     const whisperParams = {
       language: 'en',
       model: modelPath,
@@ -307,7 +315,7 @@ class ModelService {
 
   async getDownloadedModels(): Promise<Model[]> {
     const modelsInStore: Model[] = storage.getSync('models')
-    return Promise.resolve(modelsInStore.filter((model) => model.modelPath !== undefined))
+    return Promise.resolve(modelsInStore.filter((model) => model.downloadPath !== undefined))
   }
 
   getModelsDirectoryPath(): string {

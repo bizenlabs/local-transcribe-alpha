@@ -4,44 +4,43 @@ export const modelsData: Model[] = [
   {
     id: 1,
     name: 'Tiny',
-    model: 'onnx-community/whisper-tiny_timestamped',
-    modelPath: '',
     description: 'Lightweight and fast, speed over precision.',
-    size: '78 MB'
+    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
+    downloadPath: null,
+    size: '77.69 MB'
   },
   {
     id: 2,
     name: 'Base',
-    model: 'onnx-community/whisper-base_timestamped',
-    modelPath: '',
     description: 'More accurate than Tiny, suited for quick transcription on most devices.',
-    size: '148 MB'
+    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
+    downloadPath: null,
+    size: '147.95 MB'
   },
   {
     id: 3,
     name: 'Small',
-    model: 'onnx-community/whisper-small_timestamped',
-    modelPath: '',
-    description:
-      'Small model balancing speed and accuracy, suitable for general transcription tasks.',
-    size: '487 MB'
+    description: 'Balancing speed and accuracy, suitable for general transcription tasks.',
+    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin',
+    downloadPath: null,
+    size: '487.6 MB'
   },
   {
     id: 4,
-    name: 'Large v3 Turbo',
-    model: 'onnx-community/whisper-large-v3-turbo_timestamped',
-    modelPath: '',
+    name: 'Medium',
     description:
-      'High-performance model for detailed transcription, optimized for speed and accuracy.',
-    size: '1.6 GB'
+      'Offers reliable accuracy across various languages but requires more processing power.',
+    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin',
+    downloadPath: null,
+    size: '1.53.GB'
   },
   {
     id: 5,
-    name: 'Hindi Small',
-    model: 'onnx-community/whisper-hindi-small-ONNX',
-    modelPath: '',
-    language: 'hi_IN',
-    description: 'Specialized for Hindi language transcription, balancing speed and accuracy.',
-    size: '967 MB'
+    name: 'Large v3 Turbo',
+    description:
+      'High-performance model for detailed transcription, optimized for speed and accuracy.',
+    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin',
+    downloadPath: null,
+    size: '1.62.GB'
   }
 ]

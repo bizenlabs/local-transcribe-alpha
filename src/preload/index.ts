@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { DownloaderReport } from 'nodejs-file-downloader'
+import type { Model } from '../types/model'
 
 // Custom APIs for renderer
 const api = {
@@ -9,14 +11,16 @@ const api = {
 // ASR APIs for renderer
 const asr = {
   getModels: () => ipcRenderer.invoke('asr:getModels'),
-  downloadModel: async (modelName: string): Promise<void> =>
-    await ipcRenderer.invoke('asr:downloadModel', modelName),
+  downloadModel: async (model: Model): Promise<DownloaderReport> =>
+    await ipcRenderer.invoke('asr:downloadModel', model),
   transcribeFile: async (audioFilePath: string, modelName: string): Promise<string[]> => {
     return await ipcRenderer.invoke('asr:file', audioFilePath, modelName)
   },
   transcribeFileWhisper: async (audioFilePath: string, modelName: string): Promise<string[]> => {
     return await ipcRenderer.invoke('asr:file-whisper', audioFilePath, modelName)
-  }
+  },
+  onDownloadProgress: (callback: (percentage: string) => void) =>
+    ipcRenderer.on('modelDownloadProgress', (_event, value) => callback(value))
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

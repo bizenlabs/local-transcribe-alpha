@@ -1,6 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import electronUpdater, { type AppUpdater, UpdateCheckResult } from 'electron-updater'
 import { modelService } from './asr/model.service'
@@ -105,9 +105,9 @@ function registerIPC(): void {
     return modelService.getModels()
   })
 
-  ipcMain.handle('asr:downloadModel', async (_event, ...args) => {
-    await modelService.downloadModel(args[0])
-  })
+  // ipcMain.handle('asr:downloadModel1', async (_event, ...args) => {
+  //   await modelService.downloadModel(args[0])
+  // })
 
   ipcMain.handle('dialog:openFile', handleFileOpen)
 
@@ -117,6 +117,13 @@ function registerIPC(): void {
 
   ipcMain.handle('asr:file-whisper', async (_event, ...args) => {
     return await modelService.transcribeFileWhisper(args[0], args[1])
+  })
+
+  ipcMain.handle('asr:downloadModel', async (event, ...args) => {
+    const onProgress = function (percentage: string): void {
+      event.sender.send('modelDownloadProgress', percentage)
+    }
+    return await modelService.downloadModel(args[0], onProgress)
   })
 }
 

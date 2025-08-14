@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
+
+import { Progress } from '@/components/ui/progress'
 import {
   Card,
   CardContent,
@@ -7,29 +10,35 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card'
-import { Download, BadgeCheck, CircleDashed } from 'lucide-vue-next'
+import { Download, BadgeCheck } from 'lucide-vue-next'
 
-import { onMounted, ref } from 'vue'
-import { Model } from '../../../../types/model'
+import type { Model } from '../../../../types/model'
 
 const models = ref<Model[]>([])
-const modelDownloadInProgress = ref<string>('')
-
-function getModelList(): void {
-  console.log('getModelList')
-  window.asr.getModels().then((result) => (models.value = result))
-}
+const isDownloadInProgress = ref<number>(0)
+const modelDownloadPercentage = ref<number>(0)
 
 onMounted(() => {
   getModelList()
+  updateDownloadProgress()
 })
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-async function downloadModel(model: string) {
-  modelDownloadInProgress.value = model
-  window.asr.downloadModel(model).then(() => {
+function getModelList(): void {
+  window.asr.getModels().then((result) => (models.value = result))
+}
+
+function updateDownloadProgress(): void {
+  window.asr.onDownloadProgress(
+    (percentage: string) => (modelDownloadPercentage.value = +percentage)
+  )
+}
+
+async function downloadModel(model: Model): Promise<void> {
+  isDownloadInProgress.value = model.id
+  window.asr.downloadModel({ ...model }).then(() => {
     console.log('Model downloaded :')
-    modelDownloadInProgress.value = ''
+    isDownloadInProgress.value = 0
+    modelDownloadPercentage.value = 0
     getModelList()
   })
 }
@@ -41,31 +50,22 @@ async function downloadModel(model: string) {
       <Card>
         <CardHeader>
           <CardTitle>{{ model.name }}</CardTitle>
-          <CardDescription>{{ model.description }}</CardDescription>
+          <CardDescription>{{ model.size }}</CardDescription>
         </CardHeader>
-        <CardContent> </CardContent>
+        <CardContent>
+          <CardDescription>{{ model.description }}</CardDescription>
+        </CardContent>
         <CardFooter>
           <Download
-            v-if="!model.modelPath && !modelDownloadInProgress"
-            @click="downloadModel(model.model)"
+            v-if="!model.downloadPath && !isDownloadInProgress"
+            @click="downloadModel(model)"
           ></Download>
-
-          <!--          <Trash v-if="!model.modelPath" @click="downloadModel(model.model)"></Trash>-->
-          <BadgeCheck v-if="model.modelPath" color="green"></BadgeCheck>
-          <CircleDashed
-            v-if="modelDownloadInProgress === model.model"
-            color="orange"
-          ></CircleDashed>
+          <BadgeCheck v-if="model.downloadPath" color="green"></BadgeCheck>
+          <Progress v-if="model.id === isDownloadInProgress" v-model="modelDownloadPercentage" />
         </CardFooter>
       </Card>
     </div>
-
-    <!--    <div class="aspect-video rounded-xl bg-muted/50" />-->
-    <!--    <div class="aspect-video rounded-xl bg-muted/50" />-->
-    <!--    <div class="aspect-video rounded-xl bg-muted/50" />-->
-    <!--    <div class="aspect-video rounded-xl bg-muted/50" />-->
   </div>
-  <div class="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
 </template>
 
 <style scoped></style>

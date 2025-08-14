@@ -2,9 +2,9 @@
 import { Separator } from '@/components/ui/separator'
 import { Trash } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
-import { AudioLines, FolderPlus } from 'lucide-vue-next'
+import { AudioLines, FolderPlus, AlertCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { Model } from '../../../../types/model'
+import type { Model } from '../../../../types/model'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -14,11 +14,13 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
 const transcription = ref<string[]>([])
 const transcribing = ref<boolean>(false)
+const isModelAvailable = ref<boolean>(false)
 
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
@@ -29,6 +31,11 @@ function getModelList(): void {
     if (result.length > 0) {
       models.value = result
       selectedModel.value = models.value[0].id
+      let index = result.findIndex((model) => model.downloadPath !== null)
+      if (index >= 0) {
+        console.log('index found', index)
+        isModelAvailable.value = true
+      }
     }
   })
 }
@@ -46,21 +53,11 @@ function clearSelectedFile(): void {
   transcription.value = []
 }
 
-async function transcribeFile(): Promise<void> {
-  transcribing.value = true
-  let model = models.value.find((model) => model.id === selectedModel.value)
-  if (model && model.modelPath) {
-    await window.asr.transcribeFile(filePath.value, model.modelPath).then((result) => {
-      transcription.value = result
-      transcribing.value = false
-    })
-  }
-}
 async function transcribeFileWhisper(): Promise<void> {
   transcribing.value = true
   let model = models.value.find((model) => model.id === selectedModel.value)
-  if (model && model.modelPath) {
-    await window.asr.transcribeFileWhisper(filePath.value, model.modelPath).then((result) => {
+  if (model && model.downloadPath) {
+    await window.asr.transcribeFileWhisper(filePath.value, model.downloadPath).then((result) => {
       transcription.value = result
       transcribing.value = false
     })
@@ -100,15 +97,10 @@ async function transcribeFileWhisper(): Promise<void> {
       <AudioLines class="inline" /> {{ filePath }}
       <Trash class="ml-2 text-red-400 inline" :size="18" @click="clearSelectedFile" />
       <div class="ml-auto mr-4">
-        <Button @click="transcribeFile">
-          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': transcribing }" />
-          JS Transcription
-        </Button>
         <br />
-        <br />
-        <Button @click="transcribeFileWhisper">
+        <Button :disabled="!isModelAvailable" @click="transcribeFileWhisper">
           <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': transcribing }" />
-          C++ Transcription
+          Start Transcription
         </Button>
       </div>
     </div>
@@ -125,15 +117,22 @@ async function transcribeFileWhisper(): Promise<void> {
               v-for="model in models"
               :key="model.id"
               :value="model.id"
-              :disabled="!model.modelPath"
+              :disabled="!model.downloadPath"
             >
               {{ model.name }}
             </SelectItem>
           </SelectGroup>
         </SelectContent>
       </Select>
+      <br />
+      <Alert v-if="!isModelAvailable" variant="destructive" class="w-[280px]">
+        <AlertCircle class="w-4 h-4" />
+        <AlertTitle>Download Model</AlertTitle>
+        <AlertDescription> Please download model first. </AlertDescription>
+      </Alert>
     </div>
   </section>
+
   <section>
     <div v-if="transcription && transcription.length > 0">
       <div v-for="(snippet, index) in transcription" :key="index">
