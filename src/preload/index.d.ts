@@ -12,7 +12,7 @@ declare global {
       getModels: () => Promise<Model[]>,
       downloadModel: (model: Model) => Promise<DownloaderReport>,
       transcribeFile: (audioFilePath: string, modelName: string) => Promise<string[]>,
-      transcribeFileWhisper: (audioFilePath: string, modelName: string) => Promise<string[]>
+      transcribeFileWhisper: (audioFilePath: string, modelName: string, language: string) => Promise<string[]>
       onDownloadProgress: (callback: (percentage: string) => void) =>  void
       onTranscriptionProgress: (callback: (percentage: number) => void) =>  void
     }

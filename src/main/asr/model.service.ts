@@ -92,13 +92,14 @@ class ModelService {
   async transcribeFileWhisper(
     audioFilePath: string,
     modelPath: string,
+    language: string,
     progress_callback: (percentage: number) => void
   ): Promise<string[]> {
-    console.log('Transcribing:', modelPath, audioFilePath)
+    console.log('Transcribing:', modelPath, audioFilePath, language)
     const convertedAudioFilePath = await convertToWavType(audioFilePath)
     console.log('convertedAudioFilePath:', convertedAudioFilePath)
     const whisperParams = {
-      language: 'en',
+      language,
       model: modelPath,
       fname_inp: convertedAudioFilePath,
       use_gpu: true,

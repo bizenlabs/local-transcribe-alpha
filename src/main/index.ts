@@ -119,7 +119,7 @@ function registerIPC(): void {
     const onProgress = function (percentage: number): void {
       event.sender.send('transcriptionProgress', percentage)
     }
-    return await modelService.transcribeFileWhisper(args[0], args[1], onProgress)
+    return await modelService.transcribeFileWhisper(args[0], args[1], args[2], onProgress)
   })
 
   ipcMain.handle('asr:downloadModel', async (event, ...args) => {

@@ -2,7 +2,7 @@
 import { Separator } from '@/components/ui/separator'
 import { Trash } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
-import { AudioLines, FolderPlus, AlertCircle } from 'lucide-vue-next'
+import { AudioLines, FolderPlus, AlertCircle, ChevronsUpDown, Search, Check } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import type { Model } from '../../../../types/model'
 import { Label } from '@/components/ui/label'
@@ -15,6 +15,19 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
+import {
+  Combobox,
+  ComboboxList,
+  ComboboxGroup,
+  ComboboxItem,
+  ComboboxItemIndicator,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxAnchor,
+  ComboboxTrigger
+} from '@/components/ui/combobox'
+import { cn } from '@/lib/utils'
+import { languages } from '../../../../types/languageCodes'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
@@ -25,6 +38,8 @@ const isModelAvailable = ref<boolean>(false)
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
 const transcriptionPercentage = ref<number>(0)
+
+const lang = ref<(typeof languages)[0]>(languages[0])
 
 function getModelList(): void {
   console.log('getModelList')
@@ -66,10 +81,12 @@ async function transcribeFileWhisper(): Promise<void> {
   transcriptionPercentage.value = 0
   let model = models.value.find((model) => model.id === selectedModel.value)
   if (model && model.downloadPath) {
-    await window.asr.transcribeFileWhisper(filePath.value, model.downloadPath).then((result) => {
-      transcription.value = result
-      isTranscribing.value = false
-    })
+    await window.asr
+      .transcribeFileWhisper(filePath.value, model.downloadPath, lang.value.value)
+      .then((result) => {
+        transcription.value = result
+        isTranscribing.value = false
+      })
   }
 }
 </script>
@@ -152,6 +169,43 @@ async function transcribeFileWhisper(): Promise<void> {
           </SelectGroup>
         </SelectContent>
       </Select>
+      <br />
+      <Label class="m-2" for="select-language">Language</Label>
+      <Combobox id="select-language" v-model="lang" by="label">
+        <ComboboxAnchor as-child>
+          <ComboboxTrigger as-child class="w-[280px]">
+            <Button variant="outline" class="justify-between">
+              {{ lang?.label ?? 'Select language' }}
+
+              <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </ComboboxTrigger>
+        </ComboboxAnchor>
+
+        <ComboboxList class="w-[280px]">
+          <div class="relative w-full max-w-sm items-center">
+            <ComboboxInput
+              class="pl-9 focus-visible:ring-0 border-0 border-b rounded-none h-10"
+              placeholder="Select language..."
+            />
+            <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
+              <Search class="size-4 text-muted-foreground" />
+            </span>
+          </div>
+
+          <ComboboxEmpty> No language found. </ComboboxEmpty>
+
+          <ComboboxGroup>
+            <ComboboxItem v-for="language in languages" :key="language.value" :value="language">
+              {{ language.label }}
+
+              <ComboboxItemIndicator>
+                <Check :class="cn('ml-auto h-4 w-4')" />
+              </ComboboxItemIndicator>
+            </ComboboxItem>
+          </ComboboxGroup>
+        </ComboboxList>
+      </Combobox>
     </div>
     <br />
   </section>
