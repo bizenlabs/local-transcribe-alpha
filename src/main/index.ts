@@ -111,12 +111,15 @@ function registerIPC(): void {
 
   ipcMain.handle('dialog:openFile', handleFileOpen)
 
-  ipcMain.handle('asr:file', async (_event, ...args) => {
-    return await modelService.transcribeFile(args[0], args[1])
-  })
+  // ipcMain.handle('asr:file', async (_event, ...args) => {
+  //   return await modelService.transcribeFile(args[0], args[1])
+  // })
 
-  ipcMain.handle('asr:file-whisper', async (_event, ...args) => {
-    return await modelService.transcribeFileWhisper(args[0], args[1])
+  ipcMain.handle('asr:file-whisper', async (event, ...args) => {
+    const onProgress = function (percentage: number): void {
+      event.sender.send('transcriptionProgress', percentage)
+    }
+    return await modelService.transcribeFileWhisper(args[0], args[1], onProgress)
   })
 
   ipcMain.handle('asr:downloadModel', async (event, ...args) => {

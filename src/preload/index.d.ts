@@ -14,6 +14,7 @@ declare global {
       transcribeFile: (audioFilePath: string, modelName: string) => Promise<string[]>,
       transcribeFileWhisper: (audioFilePath: string, modelName: string) => Promise<string[]>
       onDownloadProgress: (callback: (percentage: string) => void) =>  void
+      onTranscriptionProgress: (callback: (percentage: number) => void) =>  void
     }
   }
 }

@@ -20,7 +20,10 @@ const asr = {
     return await ipcRenderer.invoke('asr:file-whisper', audioFilePath, modelName)
   },
   onDownloadProgress: (callback: (percentage: string) => void) =>
-    ipcRenderer.on('modelDownloadProgress', (_event, value) => callback(value))
+    ipcRenderer.on('modelDownloadProgress', (_event, value) => callback(value)),
+
+  onTranscriptionProgress: (callback: (percentage: number) => void) =>
+    ipcRenderer.on('transcriptionProgress', (_event, value) => callback(value))
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

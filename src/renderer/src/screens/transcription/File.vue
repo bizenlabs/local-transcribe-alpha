@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { Progress } from '@/components/ui/progress'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
@@ -23,6 +24,7 @@ const isModelAvailable = ref<boolean>(false)
 
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
+const transcriptionPercentage = ref<number>(0)
 
 function getModelList(): void {
   console.log('getModelList')
@@ -41,10 +43,17 @@ function getModelList(): void {
 
 onMounted(() => {
   getModelList()
+  updateTranscriptionProgress()
 })
 
 async function selectFile(): Promise<void> {
   filePath.value = await window.api.openFile()
+}
+
+function updateTranscriptionProgress(): void {
+  window.asr.onTranscriptionProgress(
+    (percentage: number) => (transcriptionPercentage.value = percentage)
+  )
 }
 
 function clearSelectedFile(): void {
@@ -54,6 +63,7 @@ function clearSelectedFile(): void {
 
 async function transcribeFileWhisper(): Promise<void> {
   isTranscribing.value = true
+  transcriptionPercentage.value = 0
   let model = models.value.find((model) => model.id === selectedModel.value)
   if (model && model.downloadPath) {
     await window.asr.transcribeFileWhisper(filePath.value, model.downloadPath).then((result) => {
@@ -122,6 +132,8 @@ async function transcribeFileWhisper(): Promise<void> {
     </div>
 
     <div v-if="models.length > 0 && isModelAvailable">
+      <br />
+      <Progress v-if="isTranscribing" v-model="transcriptionPercentage" />
       <Label class="m-2" for="select-model">Model</Label>
       <Select id="select-model" v-model="selectedModel">
         <SelectTrigger class="w-[280px]">

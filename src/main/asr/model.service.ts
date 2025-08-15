@@ -7,18 +7,14 @@ import { modelsData as appModelList } from './models'
 import type { Model } from '../../types/model'
 
 import {
-  AutomaticSpeechRecognitionOutput,
   AutoProcessor,
   AutoTokenizer,
   full,
-  pipeline,
   PreTrainedModel,
   PreTrainedTokenizer,
   Processor,
   WhisperForConditionalGeneration
 } from '@huggingface/transformers'
-import * as fs from 'node:fs'
-import wavefile from 'wavefile'
 
 import { convertToWavType } from '../utils/fileConverter'
 import { createRequire } from 'node:module'
@@ -93,49 +89,41 @@ class ModelService {
     return downloadReport
   }
 
-  // private syncStorageConfigWithAppConfig(): void {
-  //   console.log('Sync Storage Config', this.modelsDirectoryPath)
-  //
-  //   storage.has('models', function (_error: never, hasKey: boolean) {
-  //     if (!hasKey) {
-  //       console.log('Sync Storage Config key not found')
-  //       storage.set('models', baseModelData)
-  //       ModelService.models = baseModelData
-  //     } else {
-  //       const modelsInStore: Model[] = storage.getSync('models')
-  //       baseModelData.forEach((model: Model) => {
-  //         model.modelPath = modelsInStore.find(
-  //           (storeModel) => model.model === storeModel.model
-  //         )!.modelPath
-  //       })
-  //       storage.set('models', baseModelData)
-  //       ModelService.models = baseModelData
-  //     }
-  //   })
-  // }
+  async transcribeFileWhisper(
+    audioFilePath: string,
+    modelPath: string,
+    progress_callback: (percentage: number) => void
+  ): Promise<string[]> {
+    console.log('Transcribing:', modelPath, audioFilePath)
+    const convertedAudioFilePath = await convertToWavType(audioFilePath)
+    console.log('convertedAudioFilePath:', convertedAudioFilePath)
+    const whisperParams = {
+      language: 'en',
+      model: modelPath,
+      fname_inp: convertedAudioFilePath,
+      use_gpu: true,
+      flash_attn: false,
+      no_prints: true,
+      comma_in_time: false,
+      translate: true,
+      no_timestamps: false,
+      detect_language: false,
+      audio_ctx: 0,
+      max_len: 0,
+      progress_callback
+    }
+    const require = createRequire(import.meta.url)
+    console.log('bin path', binPath)
+    const { whisper } = require(binPath)
+    const whisperAsync = promisify(whisper)
+    const result = await whisperAsync(whisperParams)
+    console.log(result.transcription)
+    return Promise.resolve(result.transcription)
+  }
 
   public static get Instance(): ModelService {
     return this._instance || (this._instance = new this())
   }
-
-  // private updateDownloadedModelList(modelName: string, modelPath: string) {
-  //   console.log('updateDownloadedModelList', modelName, modelPath)
-  //   let modelsInStore: Model[] = []
-  //   storage.get('models', function (error, data) {
-  //     if (error) throw error
-  //     modelsInStore = data
-  //     console.log(data)
-  //   })
-  //   console.log('storage.getSync', modelsInStore)
-  //   modelsInStore.find((model) => model.model === modelName)!.modelPath = modelPath
-  //   storage.set('models', modelsInStore, (error) => {
-  //     if (error) {
-  //       console.error('Error updating model download status:', error)
-  //     } else {
-  //       console.log(`Model ${modelName} downloaded and status updated.`)
-  //     }
-  //   })
-  // }
 
   async loadModel(modelName: string): Promise<string> {
     console.log('Loading model:', modelName)
@@ -170,149 +158,6 @@ class ModelService {
     return Promise.resolve(ModelService.models)
   }
 
-  async transcribeFileWhisper(audioFilePath: string, modelPath: string): Promise<string[]> {
-    console.log('Madal:', modelPath, audioFilePath)
-    const convertedAudioFilePath = await convertToWavType(audioFilePath)
-    console.log('convertedAudioFilePath:', convertedAudioFilePath)
-    // const modelPath = path
-    //   .join(__dirname, '../../resources/bin/ggml-tiny.en.bin')
-    //   .replace('app.asar', 'app.asar.unpacked')
-    const whisperParams = {
-      language: 'en',
-      model: modelPath,
-      fname_inp: convertedAudioFilePath,
-      use_gpu: true,
-      flash_attn: false,
-      no_prints: true,
-      comma_in_time: false,
-      translate: true,
-      no_timestamps: false,
-      detect_language: false,
-      audio_ctx: 0,
-      max_len: 0,
-      progress_callback: (progress) => {
-        console.log(`progress: ${progress}%`)
-      }
-    }
-    const require = createRequire(import.meta.url)
-    console.log('bin path', binPath)
-    const { whisper } = require(binPath)
-    // console.log('whisper', whisper)
-    // const { promisify } = require('util')
-    const whisperAsync = promisify(whisper)
-    const result = await whisperAsync(whisperParams)
-    console.log(result.transcription)
-    return Promise.resolve(result.transcription)
-  }
-
-  async transcribeFile(audioFilePath: string, modelName: string): Promise<string[]> {
-    console.log('Transcribe audio file:', audioFilePath, 'with model:', modelName)
-    console.log('Buffer input:', fs.readFileSync(audioFilePath).length)
-    const convertedAudioFilePath = await convertToWavType(audioFilePath)
-
-    console.log('convertedAudioFilePath Transcribe audio file:', convertedAudioFilePath)
-    const buffer = fs.readFileSync(convertedAudioFilePath)
-    console.log('Buffer:', buffer.length)
-    const wav = new wavefile.WaveFile(buffer)
-    console.log('Wav file is a WAV file.')
-    wav.toBitDepth('32f')
-    wav.toSampleRate(16000)
-
-    let audioData = wav.getSamples(true)
-    if (Array.isArray(audioData)) {
-      console.log('Transcribe audio file is array:', audioData.length)
-      audioData = audioData[0]
-    }
-    const startTime = performance.now()
-    const transcriber = await pipeline('automatic-speech-recognition', modelName, {
-      device: 'cpu'
-    })
-    const output = await transcriber(audioData, { chunk_length_s: 30, stride_length_s: 5 })
-    const finalOutput: string[] = []
-    if (Array.isArray(output)) {
-      ;(output as AutomaticSpeechRecognitionOutput[]).forEach((o) => {
-        finalOutput.push(o.text)
-      })
-    } else {
-      finalOutput.push((output as AutomaticSpeechRecognitionOutput).text)
-    }
-    console.log('Transcribe audio file:', finalOutput)
-    const endTime = performance.now()
-    console.log(`Time Taken ${endTime - startTime} milliseconds`)
-    return Promise.resolve(finalOutput)
-    // const streamer = new TextStreamer(ModelService.tokenizer, {
-    //   skip_prompt: true,
-    //   skip_special_tokens: true
-    // })
-    //
-    // const inputs = await ModelService.processor(audioData)
-    //
-    // const outputs = await ModelService.model.generate({
-    //   ...inputs,
-    //   max_new_tokens: 64,
-    //   streamer
-    // })
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // const decoded = ModelService.tokenizer.batch_decode(outputs, {
-    //   skip_special_tokens: true
-    // })
-
-    // console.log(decoded)
-  }
-
-  // async transcribeAudio(audio: any, language: string = 'en'): Promise<string[] | void> {
-  //   if (ModelService.processing) {
-  //     console.warn('Model is already processing another audio input.')
-  //     return Promise.resolve()
-  //   }
-  //   console.log('Language:', language)
-  //   ModelService.processing = true
-  //
-  //   const streamer = new TextStreamer(ModelService.tokenizer, {
-  //     skip_prompt: true,
-  //     skip_special_tokens: true
-  //     // callback_function: (text: string) => {
-  //     //   console.log('Transcription:', text)
-  //     // }
-  //   })
-  //
-  //   const inputs = await ModelService.processor(audio)
-  //
-  //   const outputs = await ModelService.model.generate({
-  //     ...inputs,
-  //     max_new_tokens: 64,
-  //     streamer
-  //   })
-  //
-  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //   // @ts-ignore
-  //   const decoded = ModelService.tokenizer.batch_decode(outputs, {
-  //     skip_special_tokens: true
-  //   })
-  //   console.log(decoded)
-  //   ModelService.processing = false
-  //   return Promise.resolve(decoded)
-  //
-  //   // console.log('Transcribe audio:', audio)
-  //   // console.warn('transcribeAudio is not implemented yet')
-  //   // return Promise.resolve(['Transcription not implemented yet'])
-  //   // const transcriber = await pipeline(
-  //   //   'automatic-speech-recognition',
-  //   //   'onnx-community/whisper-tiny_timestamped'
-  //   // )
-  //   // const start = performance.now()
-  //   // const output = await transcriber(audio, {
-  //   //   return_timestamps: true,
-  //   //   chunk_length_s: 30
-  //   // })
-  //   // const end = performance.now()
-  //   // console.log(`Execution duration: ${(end - start) / 1000} seconds`)
-  //   // console.log(output)
-  //   // return Promise.resolve(['output'])
-  // }
-
   async getDownloadedModels(): Promise<Model[]> {
     const modelsInStore: Model[] = storage.getSync('models')
     return Promise.resolve(modelsInStore.filter((model) => model.downloadPath !== undefined))
@@ -321,40 +166,6 @@ class ModelService {
   getModelsDirectoryPath(): string {
     return this.modelsDirectoryPath
   }
-
-  // async transcribeFile(
-  //   audioFilePath: string,
-  //   modelName: string
-  // ): Promise<AutomaticSpeechRecognitionOutput | AutomaticSpeechRecognitionOutput[]> {
-  //   console.log('Transcribe audio file:', audioFilePath, 'with model:', modelName)
-  //   const buffer = fs.readFileSync(audioFilePath)
-  //   const wav = new wavefile.WaveFile(buffer)
-  //   wav.toBitDepth('32f')
-  //   wav.toSampleRate(16000)
-  //   // const blob = new Blob([buffer], { type: 'audio/wav' })
-  //   // const blobUrl = URL.createObjectURL(blob)
-  //   // const audioObject = URL.createObjectURL(blobUrl)
-  //
-  //   let audioData = wav.getSamples(true)
-  //   // let audioData = wav.toBase64()
-  //   // let audioData = wav.to§()
-  //   // new Float64Array()
-  //   if (Array.isArray(audioData)) {
-  //     console.log('Transcribe audio file is array:', audioData.length)
-  //     audioData = audioData[0]
-  //   }
-  //
-  //   const transcriber = await pipeline('automatic-speech-recognition', modelName)
-  //   const start = performance.now()
-  //   const output = await transcriber(audioData, {
-  //     return_timestamps: true,
-  //     chunk_length_s: 30
-  //   })
-  //   const end = performance.now()
-  //   console.log(`Execution duration: ${(end - start) / 1000} seconds`)
-  //   console.log(output)
-  //   return output
-  // }
 }
 
 export const modelService = ModelService.Instance
