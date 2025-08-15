@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import type { ToasterProps } from "vue-sonner"
-import { Toaster as Sonner } from "vue-sonner"
+import type { ToasterProps } from 'vue-sonner'
+import { Toaster as Sonner } from 'vue-sonner'
 
 const props = defineProps<ToasterProps>()
 </script>
@@ -12,8 +12,7 @@ const props = defineProps<ToasterProps>()
     :style="{
       '--normal-bg': 'var(--popover)',
       '--normal-text': 'var(--popover-foreground)',
-      '--normal-border': 'var(--border)',
-
+      '--normal-border': 'var(--border)'
     }"
   />
 </template>
