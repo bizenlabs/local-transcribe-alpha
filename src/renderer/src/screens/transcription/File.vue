@@ -14,12 +14,11 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
 const transcription = ref<string[]>([])
-const transcribing = ref<boolean>(false)
+const isTranscribing = ref<boolean>(false)
 const isModelAvailable = ref<boolean>(false)
 
 const models = ref<Model[]>([])
@@ -54,12 +53,12 @@ function clearSelectedFile(): void {
 }
 
 async function transcribeFileWhisper(): Promise<void> {
-  transcribing.value = true
+  isTranscribing.value = true
   let model = models.value.find((model) => model.id === selectedModel.value)
   if (model && model.downloadPath) {
     await window.asr.transcribeFileWhisper(filePath.value, model.downloadPath).then((result) => {
       transcription.value = result
-      transcribing.value = false
+      isTranscribing.value = false
     })
   }
 }
@@ -70,6 +69,23 @@ async function transcribeFileWhisper(): Promise<void> {
   <Separator orientation="horizontal" />
 
   <div class="col-span-full">
+    <div
+      v-if="!isModelAvailable"
+      id="no-model-downloaded"
+      class="rounded-md bg-yellow-50 p-4 dark:bg-yellow-500/10 dark:outline dark:outline-yellow-500/15"
+    >
+      <div class="flex">
+        <div class="shrink-0">
+          <AlertCircle class="size-5 text-yellow-400 dark:text-yellow-300" aria-hidden="true" />
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-100">Download Model</h3>
+          <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-100/80">
+            <p>Please download a model to start transcription.</p>
+          </div>
+        </div>
+      </div>
+    </div>
     <div
       v-if="!filePath"
       class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-3 py-10"
@@ -98,14 +114,14 @@ async function transcribeFileWhisper(): Promise<void> {
       <Trash class="ml-2 text-red-400 inline" :size="18" @click="clearSelectedFile" />
       <div class="ml-auto mr-4">
         <br />
-        <Button :disabled="!isModelAvailable" @click="transcribeFileWhisper">
-          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': transcribing }" />
+        <Button :disabled="!isModelAvailable || isTranscribing" @click="transcribeFileWhisper">
+          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
           Start Transcription
         </Button>
       </div>
     </div>
 
-    <div v-if="models.length > 0">
+    <div v-if="models.length > 0 && isModelAvailable">
       <Label class="m-2" for="select-model">Model</Label>
       <Select id="select-model" v-model="selectedModel">
         <SelectTrigger class="w-[280px]">
@@ -124,13 +140,8 @@ async function transcribeFileWhisper(): Promise<void> {
           </SelectGroup>
         </SelectContent>
       </Select>
-      <br />
-      <Alert v-if="!isModelAvailable" variant="destructive" class="w-[280px]">
-        <AlertCircle class="w-4 h-4" />
-        <AlertTitle>Download Model</AlertTitle>
-        <AlertDescription> Please download model first. </AlertDescription>
-      </Alert>
     </div>
+    <br />
   </section>
 
   <section>
