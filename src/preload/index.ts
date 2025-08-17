@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import type { Model } from '../types/model'
+import { WhisperParams } from '../types/whisperParameters'
 
 // Custom APIs for renderer
 const api = {
@@ -19,9 +20,10 @@ const asr = {
   transcribeFileWhisper: async (
     audioFilePath: string,
     modelName: string,
-    language: string
+    language: string,
+    params: WhisperParams
   ): Promise<string[]> => {
-    return await ipcRenderer.invoke('asr:file-whisper', audioFilePath, modelName, language)
+    return await ipcRenderer.invoke('asr:file-whisper', audioFilePath, modelName, language, params)
   },
   onDownloadProgress: (callback: (percentage: string) => void) =>
     ipcRenderer.on('modelDownloadProgress', (_event, value) => callback(value)),

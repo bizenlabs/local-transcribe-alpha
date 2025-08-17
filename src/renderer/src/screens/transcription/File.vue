@@ -26,18 +26,24 @@ import {
   ComboboxAnchor,
   ComboboxTrigger
 } from '@/components/ui/combobox'
-import { cn } from '@/lib/utils'
+import { cn, millisToMinutesAndSeconds } from '@/lib/utils'
 import { languages } from '../../../../types/languageCodes'
+import { Switch } from '@/components/ui/switch'
+import { WhisperParams } from '../../../../types/whisperParameters'
+import { Slider } from '@/components/ui/slider'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
 const transcription = ref<string[]>([])
 const isTranscribing = ref<boolean>(false)
 const isModelAvailable = ref<boolean>(false)
+const useGPU = ref<boolean>(true)
 
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
 const transcriptionPercentage = ref<number>(0)
+const timeTakenToTranscribe = ref<string>('')
+const numberOfThreads = ref<number[] | undefined>([8])
 
 const lang = ref<(typeof languages)[0]>(languages[0])
 
@@ -79,14 +85,33 @@ function clearSelectedFile(): void {
 async function transcribeFileWhisper(): Promise<void> {
   isTranscribing.value = true
   transcriptionPercentage.value = 0
+  timeTakenToTranscribe.value = ''
   let model = models.value.find((model) => model.id === selectedModel.value)
   if (model && model.downloadPath) {
+    const startTime = performance.now()
+    const params: WhisperParams = {
+      language: 'en',
+      model: 'modelPath',
+      fname_inp: 'convertedAudioFilePath',
+      use_gpu: useGPU.value,
+      flash_attn: false,
+      no_prints: true,
+      comma_in_time: false,
+      translate: true,
+      no_timestamps: false,
+      detect_language: false,
+      audio_ctx: 0,
+      max_len: 0,
+      n_threads: numberOfThreads.value ? numberOfThreads.value[0] : 2
+    }
     await window.asr
-      .transcribeFileWhisper(filePath.value, model.downloadPath, lang.value.value)
+      .transcribeFileWhisper(filePath.value, model.downloadPath, lang.value.value, params)
       .then((result) => {
         transcription.value = result
         isTranscribing.value = false
       })
+    const endTime = performance.now()
+    timeTakenToTranscribe.value = millisToMinutesAndSeconds(endTime - startTime)
   }
 }
 </script>
@@ -151,6 +176,7 @@ async function transcribeFileWhisper(): Promise<void> {
     <div v-if="models.length > 0 && isModelAvailable">
       <br />
       <Progress v-if="isTranscribing" v-model="transcriptionPercentage" />
+      <p v-if="timeTakenToTranscribe">Time Taken: {{ timeTakenToTranscribe }} minutes</p>
       <Label class="m-2" for="select-model">Model</Label>
       <Select id="select-model" v-model="selectedModel">
         <SelectTrigger class="w-[280px]">
@@ -206,8 +232,26 @@ async function transcribeFileWhisper(): Promise<void> {
           </ComboboxGroup>
         </ComboboxList>
       </Combobox>
+      <br />
+      <div class="flex items-center space-x-2">
+        <Switch id="use-gpu" v-model="useGPU" />
+        <Label for="use-gpu">Use GPU</Label>
+      </div>
     </div>
     <br />
+    <div class="flex items-center space-x-2 w-[280px]">
+      <Label class="m-2 text-s" for="number-threads">Number of Threads</Label>
+      <p>{{ numberOfThreads ? numberOfThreads[0] : '' }}</p>
+      <Slider
+        id="number-threads"
+        :value="numberOfThreads"
+        :default-value="[8]"
+        :max="10"
+        :min="1"
+        :step="1"
+        @update:model-value="(value) => (numberOfThreads = value)"
+      />
+    </div>
   </section>
 
   <section>

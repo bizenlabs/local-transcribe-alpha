@@ -1,6 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import type { Model } from '../types/model'
+import { WhisperParams } from '../types/whisperParameters'
 
 declare global {
   interface Window {
@@ -15,7 +16,8 @@ declare global {
       transcribeFileWhisper: (
         audioFilePath: string,
         modelName: string,
-        language: string
+        language: string,
+        params: WhisperParams
       ) => Promise<string[]>
       onDownloadProgress: (callback: (percentage: string) => void) => void
       onTranscriptionProgress: (callback: (percentage: number) => void) => void

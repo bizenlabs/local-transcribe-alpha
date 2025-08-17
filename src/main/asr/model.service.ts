@@ -33,6 +33,23 @@ if (process.platform == 'darwin') {
     .replace('app.asar', 'app.asar.unpacked')
 }
 
+interface WhisperParams {
+  language: string
+  model: string
+  fname_inp: string
+  use_gpu: boolean
+  flash_attn: boolean
+  no_prints: boolean
+  comma_in_time: boolean
+  translate: boolean
+  no_timestamps: boolean
+  detect_language: boolean
+  audio_ctx: number
+  max_len: number
+  n_threads: number
+  progress_callback: (percentage: number) => void
+}
+
 class ModelService {
   private static _instance: ModelService
   private readonly modelsDirectoryPath: string = resolve(app.getPath('userData'), 'models')
@@ -93,16 +110,18 @@ class ModelService {
     audioFilePath: string,
     modelPath: string,
     language: string,
+    params: WhisperParams,
     progress_callback: (percentage: number) => void
   ): Promise<string[]> {
     console.log('Transcribing:', modelPath, audioFilePath, language)
+    console.log('Params:', params)
     const convertedAudioFilePath = await convertToWavType(audioFilePath)
     console.log('convertedAudioFilePath:', convertedAudioFilePath)
-    const whisperParams = {
+    const whisperParams: WhisperParams = {
       language,
       model: modelPath,
       fname_inp: convertedAudioFilePath,
-      use_gpu: true,
+      use_gpu: params.use_gpu,
       flash_attn: false,
       no_prints: true,
       comma_in_time: false,
@@ -111,6 +130,7 @@ class ModelService {
       detect_language: false,
       audio_ctx: 0,
       max_len: 0,
+      n_threads: params.n_threads,
       progress_callback
     }
     const require = createRequire(import.meta.url)
@@ -118,7 +138,7 @@ class ModelService {
     const { whisper } = require(binPath)
     const whisperAsync = promisify(whisper)
     const result = await whisperAsync(whisperParams)
-    console.log(result.transcription)
+    // console.log(result.transcription)
     return Promise.resolve(result.transcription)
   }
 
