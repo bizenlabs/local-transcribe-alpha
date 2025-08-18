@@ -12,4 +12,6 @@ export type WhisperParams = {
   audio_ctx: number
   max_len: number
   n_threads: number
+  n_processors: number
+  progress_callback?: never
 }

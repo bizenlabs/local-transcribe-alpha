@@ -21,6 +21,7 @@ import { createRequire } from 'node:module'
 import { promisify } from 'node:util'
 import { downloadFile } from '../utils/fileDownloader'
 import { DownloaderReport } from 'nodejs-file-downloader'
+import { WhisperParams } from '../../types/whisperParameters'
 
 let binPath: string
 if (process.platform == 'darwin') {
@@ -31,23 +32,6 @@ if (process.platform == 'darwin') {
   binPath = path
     .join(__dirname, '../../resources/bin/windows/addon.node')
     .replace('app.asar', 'app.asar.unpacked')
-}
-
-interface WhisperParams {
-  language: string
-  model: string
-  fname_inp: string
-  use_gpu: boolean
-  flash_attn: boolean
-  no_prints: boolean
-  comma_in_time: boolean
-  translate: boolean
-  no_timestamps: boolean
-  detect_language: boolean
-  audio_ctx: number
-  max_len: number
-  n_threads: number
-  progress_callback: (percentage: number) => void
 }
 
 class ModelService {
@@ -106,6 +90,32 @@ class ModelService {
     return downloadReport
   }
 
+  // async transcribeAudio(buffer: Float32Array<ArrayBuffer>) {
+  //   const whisperParams = {
+  //     model: modelPath,
+  //     fname_inp: convertedAudioFilePath,
+  //     use_gpu: params.use_gpu,
+  //     flash_attn: false,
+  //     no_prints: true,
+  //     comma_in_time: false,
+  //     translate: true,
+  //     no_timestamps: false,
+  //     detect_language: false,
+  //     audio_ctx: 0,
+  //     max_len: 0,
+  //     n_processors: params.n_threads,
+  //     print_progress: true,
+  //     print_colors: true,
+  //     progress_callback
+  //   }
+  //
+  //   console.log('bin path', binPath)
+  //   const { whisper } = require(binPath)
+  //   const whisperAsync = promisify(whisper)
+  //
+  //   const result = await whisperAsync(whisperParams)
+  // }
+
   async transcribeFileWhisper(
     audioFilePath: string,
     modelPath: string,
@@ -117,7 +127,7 @@ class ModelService {
     console.log('Params:', params)
     const convertedAudioFilePath = await convertToWavType(audioFilePath)
     console.log('convertedAudioFilePath:', convertedAudioFilePath)
-    const whisperParams: WhisperParams = {
+    const whisperParams = {
       language,
       model: modelPath,
       fname_inp: convertedAudioFilePath,
@@ -131,6 +141,7 @@ class ModelService {
       audio_ctx: 0,
       max_len: 0,
       n_threads: params.n_threads,
+      n_processors: params.n_processors,
       progress_callback
     }
     const require = createRequire(import.meta.url)

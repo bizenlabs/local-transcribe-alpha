@@ -44,6 +44,7 @@ const selectedModel = ref<number>(0)
 const transcriptionPercentage = ref<number>(0)
 const timeTakenToTranscribe = ref<string>('')
 const numberOfThreads = ref<number[] | undefined>([8])
+const numberOfProcessors = ref<number[] | undefined>([2])
 
 const lang = ref<(typeof languages)[0]>(languages[0])
 
@@ -102,7 +103,8 @@ async function transcribeFileWhisper(): Promise<void> {
       detect_language: false,
       audio_ctx: 0,
       max_len: 0,
-      n_threads: numberOfThreads.value ? numberOfThreads.value[0] : 2
+      n_threads: numberOfThreads.value ? numberOfThreads.value[0] : 2,
+      n_processors: numberOfProcessors.value ? numberOfProcessors.value[0] : 2
     }
     await window.asr
       .transcribeFileWhisper(filePath.value, model.downloadPath, lang.value.value, params)
@@ -246,10 +248,23 @@ async function transcribeFileWhisper(): Promise<void> {
         id="number-threads"
         :value="numberOfThreads"
         :default-value="[8]"
-        :max="10"
+        :max="50"
         :min="1"
         :step="1"
         @update:model-value="(value) => (numberOfThreads = value)"
+      />
+    </div>
+    <div class="flex items-center space-x-2 w-[280px]">
+      <Label class="m-2 text-s" for="number-threads">Number of Processors</Label>
+      <p>{{ numberOfProcessors ? numberOfProcessors[0] : '' }}</p>
+      <Slider
+        id="number-threads"
+        :value="numberOfProcessors"
+        :default-value="[8]"
+        :max="16"
+        :min="1"
+        :step="1"
+        @update:model-value="(value) => (numberOfProcessors = value)"
       />
     </div>
   </section>
