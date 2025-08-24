@@ -35,6 +35,7 @@ import { Slider } from '@/components/ui/slider'
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
 const transcription = ref<string[]>([])
+const summary = ref<string>()
 const isTranscribing = ref<boolean>(false)
 const isModelAvailable = ref<boolean>(false)
 const useGPU = ref<boolean>(true)
@@ -99,7 +100,7 @@ async function transcribeFileWhisper(): Promise<void> {
       no_prints: true,
       comma_in_time: false,
       translate: true,
-      no_timestamps: false,
+      no_timestamps: true,
       detect_language: false,
       audio_ctx: 0,
       max_len: 0,
@@ -115,6 +116,14 @@ async function transcribeFileWhisper(): Promise<void> {
     const endTime = performance.now()
     timeTakenToTranscribe.value = millisToMinutesAndSeconds(endTime - startTime)
   }
+}
+
+async function summarize(): Promise<void> {
+  let cleanText = transcription.value.join('')
+  // console.log(transcription.value.map((segment: string) => segment.split(',')[2]))
+  const result = await window.asr.summarize(cleanText)
+  console.log(result)
+  summary.value = result
 }
 </script>
 
@@ -171,6 +180,13 @@ async function transcribeFileWhisper(): Promise<void> {
         <Button :disabled="!isModelAvailable || isTranscribing" @click="transcribeFileWhisper">
           <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
           Start Transcription
+        </Button>
+        <br />
+        <br />
+
+        <Button :disabled="!isModelAvailable || isTranscribing" @click="summarize">
+          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
+          Summarize
         </Button>
       </div>
     </div>
@@ -267,6 +283,11 @@ async function transcribeFileWhisper(): Promise<void> {
         @update:model-value="(value) => (numberOfProcessors = value)"
       />
     </div>
+  </section>
+
+  <section v-if="summary">
+    <p>Summary</p>
+    {{ summary }}
   </section>
 
   <section>

@@ -29,7 +29,11 @@ const asr = {
     ipcRenderer.on('modelDownloadProgress', (_event, value) => callback(value)),
 
   onTranscriptionProgress: (callback: (percentage: number) => void) =>
-    ipcRenderer.on('transcriptionProgress', (_event, value) => callback(value))
+    ipcRenderer.on('transcriptionProgress', (_event, value) => callback(value)),
+
+  summarize: async (text: string): Promise<string> => {
+    return await ipcRenderer.invoke('asr:summarize', text)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

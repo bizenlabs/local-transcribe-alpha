@@ -2,6 +2,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import type { Model } from '../types/model'
 import { WhisperParams } from '../types/whisperParameters'
+import { summarize } from "../main/summary/summary";
 
 declare global {
   interface Window {
@@ -21,6 +22,7 @@ declare global {
       ) => Promise<string[]>
       onDownloadProgress: (callback: (percentage: string) => void) => void
       onTranscriptionProgress: (callback: (percentage: number) => void) => void
+      summarize: (text: string) => Promise<string>
     }
   }
 }

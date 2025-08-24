@@ -4,6 +4,7 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import electronUpdater, { type AppUpdater, UpdateCheckResult } from 'electron-updater'
 import { modelService } from './asr/model.service'
+import Saransh from './summary/summarize'
 
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
@@ -103,6 +104,14 @@ function registerIPC(): void {
   ipcMain.handle('asr:getModels', async () => {
     console.log('asr:getModels')
     return modelService.getModels()
+  })
+
+  ipcMain.handle('asr:summarize', async (_event, ...args) => {
+    console.log('asr:summarize')
+    // return await modelService.summary(args[0])
+    return await new Saransh().summary(args[0])
+    // return await summarizer.summary(args[0])
+    // return await summarize(args[0])
   })
 
   // ipcMain.handle('asr:downloadModel1', async (_event, ...args) => {

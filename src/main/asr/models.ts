@@ -42,5 +42,32 @@ export const modelsData: Model[] = [
     url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin',
     downloadPath: null,
     size: '1.62.GB'
+  },
+  {
+    id: 6,
+    name: 'Clinician-Note-2.0',
+    description:
+      'High-performance model for detailed transcription, optimized for speed and accuracy.',
+    url: 'https://huggingface.co/mradermacher/Clinician-Note-2.0a-GGUF/resolve/main/Clinician-Note-2.0a.Q4_K_S.gguf',
+    downloadPath: null,
+    size: '2.5.GB'
+  },
+  {
+    id: 7,
+    name: 'Mistral_7B_Summarizer',
+    description:
+      'High-performance model for detailed transcription, optimized for speed and accuracy.',
+    url: 'https://huggingface.co/mradermacher/mistral-Summarizer-7b-instruct-v0.2-GGUF/resolve/main/mistral-Summarizer-7b-instruct-v0.2.Q4_K_S.gguf',
+    downloadPath: null,
+    size: '4.37 GB'
+  },
+  {
+    id: 8,
+    name: 'Meta-Llama-3.1-8B-Instruct-GGUF:Q4_K_M',
+    description:
+      'High-performance model for detailed transcription, optimized for speed and accuracy.',
+    url: 'https://huggingface.co/mradermacher/mistral-Summarizer-7b-instruct-v0.2-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct.Q4_K_M.gguf',
+    downloadPath: null,
+    size: '4.37 GB'
   }
 ]

@@ -10,6 +10,7 @@ import {
   AutoProcessor,
   AutoTokenizer,
   full,
+  pipeline,
   PreTrainedModel,
   PreTrainedTokenizer,
   Processor,
@@ -22,6 +23,7 @@ import { promisify } from 'node:util'
 import { downloadFile } from '../utils/fileDownloader'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import { WhisperParams } from '../../types/whisperParameters'
+import { snapshotDownload } from '@huggingface/hub'
 
 let binPath: string
 if (process.platform == 'darwin') {
@@ -90,6 +92,30 @@ class ModelService {
     return downloadReport
   }
 
+  public async summary(text: string): Promise<string> {
+    const dir = await snapshotDownload({
+      repo: 'Xenova/distilbart-cnn-6-6',
+      cacheDir: this.getModelsDirectoryPath()
+    })
+
+    console.log('downloadModel', dir)
+
+    const generator = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6', {
+      cache_dir: this.getModelsDirectoryPath()
+    })
+    const output = await generator(text)
+    // const summary: string = ''
+    // if (Array.isArray(output)) {
+    //   ;(output as SummarizationOutput[]).forEach((item: SummarizationOutput) => {
+    //     item.map((summary_single) => {
+    //       summary += summary_single.summary_text
+    //     })
+    //   })
+    // }
+    console.log(output)
+    return Promise.resolve(JSON.stringify(output))
+  }
+
   // async transcribeAudio(buffer: Float32Array<ArrayBuffer>) {
   //   const whisperParams = {
   //     model: modelPath,
@@ -134,9 +160,9 @@ class ModelService {
       use_gpu: params.use_gpu,
       flash_attn: false,
       no_prints: true,
-      comma_in_time: false,
+      comma_in_time: true,
       translate: true,
-      no_timestamps: false,
+      no_timestamps: true,
       detect_language: false,
       audio_ctx: 0,
       max_len: 0,
@@ -146,10 +172,12 @@ class ModelService {
     }
     const require = createRequire(import.meta.url)
     console.log('bin path', binPath)
-    const { whisper } = require(binPath)
+    let { whisper } = require(binPath)
     const whisperAsync = promisify(whisper)
     const result = await whisperAsync(whisperParams)
+    whisper = null
     // console.log(result.transcription)
+    // await startServer()
     return Promise.resolve(result.transcription)
   }
 
