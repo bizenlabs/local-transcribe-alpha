@@ -31,10 +31,14 @@ import { languages } from '../../../../types/languageCodes'
 import { Switch } from '@/components/ui/switch'
 import { WhisperParams } from '../../../../types/whisperParameters'
 import { Slider } from '@/components/ui/slider'
+import axios from 'axios'
+import VueMarkdown from 'vue-markdown-render'
+import MarkdownItAnchor from 'markdown-it-anchor'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
-const transcription = ref<string[]>([])
+const transcriptionTimestamp = ref<string[]>([])
+const transcription = ref<string>('')
 const summary = ref<string>()
 const isTranscribing = ref<boolean>(false)
 const isModelAvailable = ref<boolean>(false)
@@ -48,6 +52,7 @@ const numberOfThreads = ref<number[] | undefined>([8])
 const numberOfProcessors = ref<number[] | undefined>([2])
 
 const lang = ref<(typeof languages)[0]>(languages[0])
+const plugins = [MarkdownItAnchor]
 
 function getModelList(): void {
   console.log('getModelList')
@@ -81,7 +86,9 @@ function updateTranscriptionProgress(): void {
 
 function clearSelectedFile(): void {
   filePath.value = ''
-  transcription.value = []
+  transcriptionTimestamp.value = []
+  transcription.value = ''
+  summary.value = ''
 }
 
 async function transcribeFileWhisper(): Promise<void> {
@@ -110,7 +117,12 @@ async function transcribeFileWhisper(): Promise<void> {
     await window.asr
       .transcribeFileWhisper(filePath.value, model.downloadPath, lang.value.value, params)
       .then((result) => {
-        transcription.value = result
+        result.forEach((element) => {
+          if (element[2]) {
+            transcription.value += element[2]
+          }
+        })
+        transcriptionTimestamp.value = result
         isTranscribing.value = false
       })
     const endTime = performance.now()
@@ -119,11 +131,51 @@ async function transcribeFileWhisper(): Promise<void> {
 }
 
 async function summarize(): Promise<void> {
-  let cleanText = transcription.value.join('')
-  // console.log(transcription.value.map((segment: string) => segment.split(',')[2]))
-  const result = await window.asr.summarize(cleanText)
-  console.log(result)
-  summary.value = result
+  let count = 0
+  summary.value = ''
+  axios
+    .post('http://127.0.0.1:8080/v1/chat/completions', {
+      messages: [
+        {
+          role: 'user',
+          content: 'Please summarize the following text: ' + transcription.value
+        }
+      ],
+      stream: false,
+      cache_prompt: false,
+      reasoning_format: 'none',
+      samplers: 'edkypmxt',
+      temperature: 0.8,
+      dynatemp_range: 0,
+      dynatemp_exponent: 1,
+      top_k: 40,
+      top_p: 0.95,
+      min_p: 0.05,
+      typical_p: 1,
+      xtc_probability: 0,
+      xtc_threshold: 0.1,
+      repeat_last_n: 64,
+      repeat_penalty: 1,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      dry_multiplier: 0,
+      dry_base: 1.75,
+      dry_allowed_length: 2,
+      dry_penalty_last_n: -1,
+      max_tokens: -1,
+      timings_per_token: false
+    })
+    .then(function (response) {
+      console.log(response.data)
+      response.data['choices'].forEach((choice) => {
+        summary.value += choice.message.content
+      })
+      console.log(count++)
+    })
+    .catch(function (error) {
+      console.log(error)
+    })
+  // summary.value = await window.asr.summarize(transcription.value)
 }
 </script>
 
@@ -184,7 +236,7 @@ async function summarize(): Promise<void> {
         <br />
         <br />
 
-        <Button :disabled="!isModelAvailable || isTranscribing" @click="summarize">
+        <Button v-if="transcription && transcription.length > 1" @click="summarize">
           <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
           Summarize
         </Button>
@@ -285,14 +337,21 @@ async function summarize(): Promise<void> {
     </div>
   </section>
 
-  <section v-if="summary">
-    <p>Summary</p>
-    {{ summary }}
-  </section>
+  <div v-if="summary">
+    <h2>Summary</h2>
 
+    <vue-markdown :source="summary" :plugins="plugins" />
+
+    <!--    {{ summary }}-->
+    <!--    <div v-html="summary"></div>-->
+  </div>
+
+  <br /><br />
+  <!--  {{ transcription }}-->
+  <br /><br />
   <section>
-    <div v-if="transcription && transcription.length > 0">
-      <div v-for="(snippet, index) in transcription" :key="index">
+    <div v-if="transcriptionTimestamp && transcriptionTimestamp.length > 0">
+      <div v-for="(snippet, index) in transcriptionTimestamp" :key="index">
         {{ snippet }}
       </div>
     </div>

@@ -15,7 +15,7 @@ export default class Saransh {
         .join(__dirname, '../../resources/bin/llama-windows/llama-server.exe')
         .replace('app.asar', 'app.asar.unpacked')
     }
-    const command = `${binPath}  -hf ggml-org/gemma-3-1b-it-GGUF`
+    const command = `${binPath}  -hf bartowski/Llama-3.2-3B-Instruct-GGUF`
     console.log('Llama command:', command)
     exec(command, (error, stdout, stderr) => {
       console.log(stdout, stderr, error)
