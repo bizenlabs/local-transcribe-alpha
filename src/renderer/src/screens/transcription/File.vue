@@ -46,6 +46,7 @@ const useGPU = ref<boolean>(true)
 
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
+const selectedLLMModel = ref<number>(0)
 const transcriptionPercentage = ref<number>(0)
 const timeTakenToTranscribe = ref<string>('')
 const numberOfThreads = ref<number[] | undefined>([8])
@@ -127,6 +128,13 @@ async function transcribeFileWhisper(): Promise<void> {
       })
     const endTime = performance.now()
     timeTakenToTranscribe.value = millisToMinutesAndSeconds(endTime - startTime)
+  }
+}
+
+async function startLLMServer(): Promise<void> {
+  let model = models.value.find((model) => model.id === selectedLLMModel.value)
+  if (model && model.downloadPath) {
+    await window.asr.summarize('', model.downloadPath)
   }
 }
 
@@ -236,7 +244,32 @@ async function summarize(): Promise<void> {
         <br />
         <br />
 
-        <Button v-if="transcription && transcription.length > 1" @click="summarize">
+        <div v-if="transcription && transcription.length > 1">
+          <Label class="m-2" for="select-model">LLM Model</Label>
+          <Select id="select-llm-model" v-model="selectedLLMModel">
+            <SelectTrigger class="w-[280px]">
+              <SelectValue placeholder="Select Model" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem
+                  v-for="model in models"
+                  :key="model.id"
+                  :value="model.id"
+                  :disabled="!model.downloadPath"
+                >
+                  {{ model.name }}
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <br />
+        </div>
+        <Button @click="startLLMServer">
+          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
+          Start LLM
+        </Button>
+        <Button @click="summarize">
           <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
           Summarize
         </Button>

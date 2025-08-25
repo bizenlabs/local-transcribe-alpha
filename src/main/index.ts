@@ -109,7 +109,7 @@ function registerIPC(): void {
   ipcMain.handle('asr:summarize', async (_event, ...args) => {
     console.log('asr:summarize')
     // return await modelService.summary(args[0])
-    return await new Saransh().summary(args[0])
+    return await new Saransh().summary(args[0], args[1])
     // return await summarizer.summary(args[0])
     // return await summarize(args[0])
   })

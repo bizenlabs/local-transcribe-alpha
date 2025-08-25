@@ -22,7 +22,7 @@ declare global {
       ) => Promise<string[]>
       onDownloadProgress: (callback: (percentage: string) => void) => void
       onTranscriptionProgress: (callback: (percentage: number) => void) => void
-      summarize: (text: string) => Promise<string>
+      summarize: (text: string, modelPath: string) => Promise<string>
     }
   }
 }
