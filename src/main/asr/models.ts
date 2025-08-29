@@ -50,5 +50,13 @@ export const modelsData: Model[] = [
     url: 'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-IQ4_XS.gguf',
     downloadPath: null,
     size: '1.7.GB'
+  },
+  {
+    id: 7,
+    name: 'meta-llama/Meta-Llama-3.1-8B-Instruct:Q4_K_S',
+    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
+    url: 'https://huggingface.co/MaziyarPanahi/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct.Q4_K_S.gguf',
+    downloadPath: null,
+    size: '4.69 GB'
   }
 ]
