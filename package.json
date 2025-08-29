@@ -1,6 +1,6 @@
 {
   "name": "local-transcribe-alpha",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -46,7 +46,7 @@
     "lucide-vue-next": "^0.536.0",
     "markdown-it-anchor": "^9.2.0",
     "nodejs-file-downloader": "^4.13.0",
-    "reka-ui": "^2.4.1",
+    "reka-ui": "^2.5.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.11",
     "tw-animate-css": "^1.3.6",

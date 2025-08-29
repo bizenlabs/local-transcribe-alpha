@@ -2,7 +2,15 @@
 import { Separator } from '@/components/ui/separator'
 import { Trash } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
-import { AudioLines, FolderPlus, AlertCircle, ChevronsUpDown, Search, Check } from 'lucide-vue-next'
+import {
+  AudioLines,
+  FolderPlus,
+  AlertCircle,
+  ChevronsUpDown,
+  Search,
+  Check,
+  ChevronsUp
+} from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import type { Model } from '../../../../types/model'
 import { Label } from '@/components/ui/label'
@@ -34,6 +42,8 @@ import { Slider } from '@/components/ui/slider'
 import axios from 'axios'
 import VueMarkdown from 'vue-markdown-render'
 import MarkdownItAnchor from 'markdown-it-anchor'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
+import { ChevronsDown } from 'lucide-vue-next'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
@@ -43,6 +53,7 @@ const summary = ref<string>()
 const isTranscribing = ref<boolean>(false)
 const isModelAvailable = ref<boolean>(false)
 const useGPU = ref<boolean>(true)
+const isOpen = ref(false)
 
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
@@ -336,38 +347,54 @@ async function summarize(): Promise<void> {
         </ComboboxList>
       </Combobox>
       <br />
-      <div class="flex items-center space-x-2">
-        <Switch id="use-gpu" v-model="useGPU" />
-        <Label for="use-gpu">Use GPU</Label>
-      </div>
+      <Collapsible v-model:open="isOpen" class="w-[300px]">
+        <div class="flex items-center justify-between space-x-4 px-3">
+          <!--          <h3 class="text-sm font-bold">Advanced Options</h3>-->
+          <Label>Advanced Options</Label>
+          <CollapsibleTrigger as-child>
+            <Button variant="ghost" size="sm" class="w-9 p-0">
+              <!--              <ChevronsUpDown class="h-4 w-4" />-->
+              <ChevronsDown v-if="!isOpen" />
+              <ChevronsUp v-if="isOpen" />
+              <span class="sr-only">Toggle</span>
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          <div class="flex items-center space-x-2">
+            <Switch id="use-gpu" v-model="useGPU" />
+            <Label for="use-gpu">Use GPU</Label>
+          </div>
+          <div class="flex items-center space-x-2 w-[280px]">
+            <Label class="m-2 text-s" for="number-threads">Number of Threads</Label>
+            <p>{{ numberOfThreads ? numberOfThreads[0] : '' }}</p>
+            <Slider
+              id="number-threads"
+              :value="numberOfThreads"
+              :default-value="[8]"
+              :max="50"
+              :min="1"
+              :step="1"
+              @update:model-value="(value) => (numberOfThreads = value)"
+            />
+          </div>
+          <div class="flex items-center space-x-2 w-[280px]">
+            <Label class="m-2 text-s" for="number-threads">Number of Processors</Label>
+            <p>{{ numberOfProcessors ? numberOfProcessors[0] : '' }}</p>
+            <Slider
+              id="number-threads"
+              :value="numberOfProcessors"
+              :default-value="[8]"
+              :max="16"
+              :min="1"
+              :step="1"
+              @update:model-value="(value) => (numberOfProcessors = value)"
+            />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
     <br />
-    <div class="flex items-center space-x-2 w-[280px]">
-      <Label class="m-2 text-s" for="number-threads">Number of Threads</Label>
-      <p>{{ numberOfThreads ? numberOfThreads[0] : '' }}</p>
-      <Slider
-        id="number-threads"
-        :value="numberOfThreads"
-        :default-value="[8]"
-        :max="50"
-        :min="1"
-        :step="1"
-        @update:model-value="(value) => (numberOfThreads = value)"
-      />
-    </div>
-    <div class="flex items-center space-x-2 w-[280px]">
-      <Label class="m-2 text-s" for="number-threads">Number of Processors</Label>
-      <p>{{ numberOfProcessors ? numberOfProcessors[0] : '' }}</p>
-      <Slider
-        id="number-threads"
-        :value="numberOfProcessors"
-        :default-value="[8]"
-        :max="16"
-        :min="1"
-        :step="1"
-        @update:model-value="(value) => (numberOfProcessors = value)"
-      />
-    </div>
   </section>
 
   <div v-if="summary">

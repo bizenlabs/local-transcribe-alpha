@@ -6,16 +6,18 @@ export default class Saransh {
     // const ffmpegBin = pathToFfmpeg?.replace('app.asar', 'app.asar.unpacked')
 
     let binPath: string
+    let command: string
     if (process.platform == 'darwin') {
       binPath = path
         .join(__dirname, '../../resources/bin/llama/llama-server')
         .replace('app.asar', 'app.asar.unpacked')
+      command = `${binPath} --context-shift -m '${modelPath}'`
     } else {
       binPath = path
         .join(__dirname, '../../resources/bin/llama-windows/llama-server.exe')
         .replace('app.asar', 'app.asar.unpacked')
+      command = `${binPath} --context-shift -m ${modelPath}`
     }
-    const command = `${binPath}  -m ${modelPath}`
     console.log('Llama command:', command)
     exec(command, (error, stdout, stderr) => {
       console.log(stdout, stderr, error)
