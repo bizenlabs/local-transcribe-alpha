@@ -9,7 +9,9 @@ export const downloadYT = async (
 ): Promise<string> => {
   const ytdlp = new YtDlp()
   const ffmpegBin = pathToFfmpeg?.replace('app.asar', 'app.asar.unpacked')
-  const audioDirectoryPath: string = resolve(app.getPath('userData'), 'audio', 'downloaded.m4a')
+
+  const file = (await ytdlp.getInfoAsync(url)).id + '.m4a'
+  const audioDirectoryPath: string = resolve(app.getPath('userData'), 'audio', file)
   try {
     const output = await ytdlp.downloadAsync(url, {
       onProgress,

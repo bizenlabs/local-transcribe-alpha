@@ -117,6 +117,7 @@ function clearSelectedFile(): void {
   transcriptionTimestamp.value = []
   transcription.value = ''
   summary.value = ''
+  youTubeUrl.value = ''
 }
 
 async function transcribeFileWhisper(): Promise<void> {
@@ -295,11 +296,12 @@ async function summarize(): Promise<void> {
           placeholder="https://www.youtube.com/watch?v=se0nIBJjVfI"
           @input="validateURL"
         />
+        <Progress v-if="isDownloadInProgress" v-model="downloadPercentage" />
         <br />
         <Button v-if="isValidYouTubeUrl" @click="downloadAudio"
           ><FileDown></FileDown> Download</Button
         >
-        <Progress v-if="isDownloadInProgress" v-model="downloadPercentage" />
+
         <AlertDescription v-if="!isValidYouTubeUrl" class="text-red-600">
           Invalid URL.
         </AlertDescription>

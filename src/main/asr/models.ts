@@ -66,5 +66,13 @@ export const modelsData: Model[] = [
     url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-IQ4_XS.gguf',
     downloadPath: null,
     size: '709 MB'
+  },
+  {
+    id: 8,
+    name: 'DeepSeek-R1-Distill-Qwen-7B-Uncensored-i1-GGUF',
+    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
+    url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-IQ4_XS.gguf',
+    downloadPath: null,
+    size: '709 MB'
   }
 ]
