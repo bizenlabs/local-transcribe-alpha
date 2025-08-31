@@ -39,11 +39,14 @@ import { languages } from '../../../../types/languageCodes'
 import { Switch } from '@/components/ui/switch'
 import { WhisperParams } from '../../../../types/whisperParameters'
 import { Slider } from '@/components/ui/slider'
-import axios from 'axios'
 import VueMarkdown from 'vue-markdown-render'
 import MarkdownItAnchor from 'markdown-it-anchor'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
-import { ChevronsDown } from 'lucide-vue-next'
+import { ChevronsDown, TvMinimalPlay, FileDown } from 'lucide-vue-next'
+import axios from 'axios'
+import { Input } from '@/components/ui/input'
+import { AlertDescription } from '@/components/ui/alert'
+import { VideoProgress } from 'ytdlp-nodejs'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
@@ -60,8 +63,13 @@ const selectedModel = ref<number>(0)
 const selectedLLMModel = ref<number>(0)
 const transcriptionPercentage = ref<number>(0)
 const timeTakenToTranscribe = ref<string>('')
+const timeTakenToSummarize = ref<string>('')
+const youTubeUrl = ref<string>('')
+const isValidYouTubeUrl = ref<boolean>(true)
 const numberOfThreads = ref<number[] | undefined>([8])
 const numberOfProcessors = ref<number[] | undefined>([2])
+const isDownloadInProgress = ref<boolean>(false)
+const downloadPercentage = ref<number>(0)
 
 const lang = ref<(typeof languages)[0]>(languages[0])
 const plugins = [MarkdownItAnchor]
@@ -84,7 +92,15 @@ function getModelList(): void {
 onMounted(() => {
   getModelList()
   updateTranscriptionProgress()
+  updateDownloadProgress()
 })
+
+function updateDownloadProgress(): void {
+  window.asr.onDownloadYTProgress((videoProgress: VideoProgress) => {
+    console.log('videoProgress', videoProgress)
+    downloadPercentage.value = videoProgress.percentage
+  })
+}
 
 async function selectFile(): Promise<void> {
   filePath.value = await window.api.openFile()
@@ -149,9 +165,40 @@ async function startLLMServer(): Promise<void> {
   }
 }
 
+function isValidHttpUrl(urlToValidate: string): boolean {
+  let url
+
+  try {
+    url = new URL(urlToValidate)
+  } catch (_) {
+    console.error(_)
+    return false
+  }
+
+  return url.protocol === 'http:' || url.protocol === 'https:'
+}
+async function validateURL(url: string): Promise<void> {
+  console.log(url)
+  isValidYouTubeUrl.value = isValidHttpUrl(youTubeUrl.value)
+}
+async function downloadAudio(): Promise<void> {
+  isValidYouTubeUrl.value = isValidHttpUrl(youTubeUrl.value)
+  if (!isValidYouTubeUrl.value) {
+    return
+  }
+  isDownloadInProgress.value = true
+  downloadPercentage.value = 0
+  window.asr.downloadYT(youTubeUrl.value).then((downloadPath) => {
+    isDownloadInProgress.value = false
+    filePath.value = downloadPath
+    console.log(downloadPath)
+  })
+}
+
 async function summarize(): Promise<void> {
   let count = 0
   summary.value = ''
+  const startTime = performance.now()
   axios
     .post('http://127.0.0.1:8080/v1/chat/completions', {
       messages: [
@@ -186,6 +233,9 @@ async function summarize(): Promise<void> {
     })
     .then(function (response) {
       console.log(response.data)
+      const endTime = performance.now()
+      timeTakenToSummarize.value = millisToMinutesAndSeconds(endTime - startTime)
+
       response.data['choices'].forEach((choice) => {
         summary.value += choice.message.content
       })
@@ -220,6 +270,7 @@ async function summarize(): Promise<void> {
         </div>
       </div>
     </div>
+
     <div
       v-if="!filePath"
       class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-3 py-10"
@@ -230,6 +281,28 @@ async function summarize(): Promise<void> {
           <p class="mt-1 font-semibold text-gray-900">Select File</p>
           <p class="text-xs/5 text-gray-600">mp3, wav up to X? MB</p>
         </span>
+      </div>
+      <span class="size-9 text-gray-300"></span>
+
+      <div class="text-center mx-20">
+        <span>
+          <TvMinimalPlay class="mx-auto size-9 text-gray-300"></TvMinimalPlay>
+          <p class="mt-1 font-semibold text-gray-900">Transcribe YouTube</p>
+        </span>
+        <Input
+          v-model="youTubeUrl"
+          type="url"
+          placeholder="https://www.youtube.com/watch?v=se0nIBJjVfI"
+          @input="validateURL"
+        />
+        <br />
+        <Button v-if="isValidYouTubeUrl" @click="downloadAudio"
+          ><FileDown></FileDown> Download</Button
+        >
+        <Progress v-if="isDownloadInProgress" v-model="downloadPercentage" />
+        <AlertDescription v-if="!isValidYouTubeUrl" class="text-red-600">
+          Invalid URL.
+        </AlertDescription>
       </div>
     </div>
   </div>
@@ -290,7 +363,8 @@ async function summarize(): Promise<void> {
     <div v-if="models.length > 0 && isModelAvailable">
       <br />
       <Progress v-if="isTranscribing" v-model="transcriptionPercentage" />
-      <p v-if="timeTakenToTranscribe">Time Taken: {{ timeTakenToTranscribe }} minutes</p>
+      <p v-if="timeTakenToTranscribe">Time Taken Transcribe: {{ timeTakenToTranscribe }} minutes</p>
+      <p v-if="timeTakenToSummarize">Time Taken Summarize: {{ timeTakenToSummarize }} minutes</p>
       <Label class="m-2" for="select-model">Model</Label>
       <Select id="select-model" v-model="selectedModel">
         <SelectTrigger class="w-[280px]">

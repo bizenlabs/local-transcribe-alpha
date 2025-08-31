@@ -5,6 +5,8 @@ import icon from '../../resources/icon.png?asset'
 import electronUpdater, { type AppUpdater, UpdateCheckResult } from 'electron-updater'
 import { modelService } from './asr/model.service'
 import Saransh from './summary/summarize'
+import { downloadYT } from './utils/youTube'
+import { VideoProgress } from 'ytdlp-nodejs'
 
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
@@ -22,7 +24,8 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webSecurity: false
     }
   })
 
@@ -136,6 +139,13 @@ function registerIPC(): void {
       event.sender.send('modelDownloadProgress', percentage)
     }
     return await modelService.downloadModel(args[0], onProgress)
+  })
+
+  ipcMain.handle('asr:downloadYT', async (event, ...args) => {
+    const onProgress = function (videoProgress: VideoProgress): void {
+      event.sender.send('ytDownloadProgress', videoProgress)
+    }
+    return await downloadYT(args[0], onProgress)
   })
 }
 

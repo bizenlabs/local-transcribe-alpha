@@ -3,6 +3,8 @@ import { DownloaderReport } from 'nodejs-file-downloader'
 import type { Model } from '../types/model'
 import { WhisperParams } from '../types/whisperParameters'
 import { summarize } from "../main/summary/summary";
+import { downloadYT } from "../main/utils/youTube";
+import { VideoProgress } from "ytdlp-nodejs";
 
 declare global {
   interface Window {
@@ -23,6 +25,8 @@ declare global {
       onDownloadProgress: (callback: (percentage: string) => void) => void
       onTranscriptionProgress: (callback: (percentage: number) => void) => void
       summarize: (text: string, modelPath: string) => Promise<string>
+      onDownloadYTProgress: (callback: (videoProgress: VideoProgress) => void) => void
+      downloadYT: (url: string) => Promise<string>
     }
   }
 }

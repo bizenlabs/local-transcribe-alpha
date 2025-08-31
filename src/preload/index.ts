@@ -3,6 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import type { Model } from '../types/model'
 import { WhisperParams } from '../types/whisperParameters'
+import { VideoProgress } from 'ytdlp-nodejs'
 
 // Custom APIs for renderer
 const api = {
@@ -27,6 +28,12 @@ const asr = {
   },
   onDownloadProgress: (callback: (percentage: string) => void) =>
     ipcRenderer.on('modelDownloadProgress', (_event, value) => callback(value)),
+
+  onDownloadYTProgress: (callback: (videoProgress: VideoProgress) => void) =>
+    ipcRenderer.on('ytDownloadProgress', (_event, value) => callback(value)),
+
+  downloadYT: async (url: string): Promise<string> =>
+    await ipcRenderer.invoke('asr:downloadYT', url),
 
   onTranscriptionProgress: (callback: (percentage: number) => void) =>
     ipcRenderer.on('transcriptionProgress', (_event, value) => callback(value)),
