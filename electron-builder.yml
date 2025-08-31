@@ -12,6 +12,7 @@ files:
 asarUnpack:
   - resources/**
   - node_modules/ffmpeg-static
+  - node_modules/ytdlp-nodejs
 win:
   executableName: local-transcribe-alpha
   publish:

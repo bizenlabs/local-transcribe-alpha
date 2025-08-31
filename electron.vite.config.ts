@@ -5,7 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    build: {
+      rollupOptions: {
+        external: ['node_modules/ytdlp-nodejs']
+      }
+    },
+    plugins: [externalizeDepsPlugin()],
+    
   },
   preload: {
     plugins: [externalizeDepsPlugin()]
