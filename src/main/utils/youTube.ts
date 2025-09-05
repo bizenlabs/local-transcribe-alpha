@@ -3,12 +3,14 @@ import pathToFfmpeg from 'ffmpeg-static'
 import { resolve } from 'path'
 import { app } from 'electron'
 import path from 'path'
+// import { startServer } from './ollama'
 
 export const downloadYT = async (
   url: string,
   onProgress: (videoProgress: VideoProgress) => void
 ): Promise<string> => {
 
+  // await startServer()
 
 
   const ffmpegPath = pathToFfmpeg?.replace('app.asar', 'app.asar.unpacked')
@@ -16,7 +18,7 @@ export const downloadYT = async (
   let binaryPath: string
   if (process.platform == 'darwin') {
     binaryPath = path
-      .join(__dirname, '../../resources/bin/yt-dlp/win/yt-dlp.exe')
+      .join(__dirname, '../../resources/bin/yt-dlp/mac/yt-dlp_macos')
       .replace('app.asar', 'app.asar.unpacked')
   } else {
     binaryPath = path

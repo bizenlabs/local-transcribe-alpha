@@ -7,6 +7,7 @@ import { modelService } from './asr/model.service'
 import Saransh from './summary/summarize'
 import { downloadYT } from './utils/youTube'
 import { VideoProgress } from 'ytdlp-nodejs'
+import { startServer } from './utils/ollama'
 
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
@@ -113,6 +114,15 @@ function registerIPC(): void {
     console.log('asr:summarize')
     // return await modelService.summary(args[0])
     return await new Saransh().summary(args[0], args[1])
+    // return await summarizer.summary(args[0])
+    // return await summarize(args[0])
+  })
+
+  ipcMain.handle('asr:startServer', async (_event, ...args) => {
+    console.log('asr:startServer', _event, ...args)
+    // return await modelService.summary(args[0])
+    return await startServer()
+    // return await new Saransh().summary(args[0], args[1])
     // return await summarizer.summary(args[0])
     // return await summarize(args[0])
   })

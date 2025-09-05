@@ -25,6 +25,7 @@ declare global {
       onDownloadProgress: (callback: (percentage: string) => void) => void
       onTranscriptionProgress: (callback: (percentage: number) => void) => void
       summarize: (text: string, modelPath: string) => Promise<string>
+      startServer: (text: string, modelPath: string) => Promise<string>
       onDownloadYTProgress: (callback: (videoProgress: VideoProgress) => void) => void
       downloadYT: (url: string) => Promise<string>
     }

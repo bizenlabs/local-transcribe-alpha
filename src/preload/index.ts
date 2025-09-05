@@ -40,6 +40,9 @@ const asr = {
 
   summarize: async (text: string, modelPath: string): Promise<string> => {
     return await ipcRenderer.invoke('asr:summarize', text, modelPath)
+  },
+  startServer: async (text: string, modelPath: string): Promise<string> => {
+    return await ipcRenderer.invoke('asr:startServer', text, modelPath)
   }
 }
 

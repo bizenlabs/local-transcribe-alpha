@@ -6,16 +6,16 @@ import storage from 'electron-json-storage'
 import { modelsData as appModelList } from './models'
 import type { Model } from '../../types/model'
 
-import {
-  AutoProcessor,
-  AutoTokenizer,
-  full,
-  pipeline,
-  PreTrainedModel,
-  PreTrainedTokenizer,
-  Processor,
-  WhisperForConditionalGeneration
-} from '@huggingface/transformers'
+// import {
+//   AutoProcessor,
+//   AutoTokenizer,
+//   full,
+//   pipeline,
+//   PreTrainedModel,
+//   PreTrainedTokenizer,
+//   Processor,
+//   WhisperForConditionalGeneration
+// } from '@huggingface/transformers'
 
 import { convertToWavType } from '../utils/fileConverter'
 import { createRequire } from 'node:module'
@@ -23,7 +23,7 @@ import { promisify } from 'node:util'
 import { downloadFile } from '../utils/fileDownloader'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import { WhisperParams } from '../../types/whisperParameters'
-import { snapshotDownload } from '@huggingface/hub'
+// import { snapshotDownload } from '@huggingface/hub'
 
 let binPath: string
 if (process.platform == 'darwin') {
@@ -41,9 +41,9 @@ class ModelService {
   private readonly modelsDirectoryPath: string = resolve(app.getPath('userData'), 'models')
   private static models: Model[] = []
 
-  static tokenizer: PreTrainedTokenizer
-  static processor: Processor
-  static model: PreTrainedModel
+  // static tokenizer: PreTrainedTokenizer
+  // static processor: Processor
+  // static model: PreTrainedModel
   static processing: boolean = false
   MAX_NEW_TOKENS = 64
 
@@ -92,29 +92,29 @@ class ModelService {
     return downloadReport
   }
 
-  public async summary(text: string): Promise<string> {
-    const dir = await snapshotDownload({
-      repo: 'Xenova/distilbart-cnn-6-6',
-      cacheDir: this.getModelsDirectoryPath()
-    })
-
-    console.log('downloadModel', dir)
-
-    const generator = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6', {
-      cache_dir: this.getModelsDirectoryPath()
-    })
-    const output = await generator(text)
-    // const summary: string = ''
-    // if (Array.isArray(output)) {
-    //   ;(output as SummarizationOutput[]).forEach((item: SummarizationOutput) => {
-    //     item.map((summary_single) => {
-    //       summary += summary_single.summary_text
-    //     })
-    //   })
-    // }
-    console.log(output)
-    return Promise.resolve(JSON.stringify(output))
-  }
+  // public async summary(text: string): Promise<string> {
+  //   const dir = await snapshotDownload({
+  //     repo: 'Xenova/distilbart-cnn-6-6',
+  //     cacheDir: this.getModelsDirectoryPath()
+  //   })
+  //
+  //   console.log('downloadModel', dir)
+  //
+  //   const generator = await pipeline('summarization', 'Xenova/distilbart-cnn-6-6', {
+  //     cache_dir: this.getModelsDirectoryPath()
+  //   })
+  //   const output = await generator(text)
+  //   // const summary: string = ''
+  //   // if (Array.isArray(output)) {
+  //   //   ;(output as SummarizationOutput[]).forEach((item: SummarizationOutput) => {
+  //   //     item.map((summary_single) => {
+  //   //       summary += summary_single.summary_text
+  //   //     })
+  //   //   })
+  //   // }
+  //   console.log(output)
+  //   return Promise.resolve(JSON.stringify(output))
+  // }
 
   // async transcribeAudio(buffer: Float32Array<ArrayBuffer>) {
   //   const whisperParams = {
@@ -185,34 +185,34 @@ class ModelService {
     return this._instance || (this._instance = new this())
   }
 
-  async loadModel(modelName: string): Promise<string> {
-    console.log('Loading model:', modelName)
-    const [tokenizer, processor, model] = await this.createModel(modelName)
-    ModelService.tokenizer = tokenizer
-    ModelService.processor = processor
-    ModelService.model = model
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    await ModelService.model.generate({
-      inputs: full([1, 80, 3000], 0.0)
-    })
-    console.log('Model loaded:', modelName)
-    return Promise.resolve(modelName)
-  }
+  // async loadModel(modelName: string): Promise<string> {
+  //   console.log('Loading model:', modelName)
+  //   const [tokenizer, processor, model] = await this.createModel(modelName)
+  //   ModelService.tokenizer = tokenizer
+  //   ModelService.processor = processor
+  //   ModelService.model = model
+  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //   // @ts-ignore
+  //   await ModelService.model.generate({
+  //     inputs: full([1, 80, 3000], 0.0)
+  //   })
+  //   console.log('Model loaded:', modelName)
+  //   return Promise.resolve(modelName)
+  // }
 
-  private async createModel(
-    modelName: string
-  ): Promise<[PreTrainedTokenizer, Processor, PreTrainedModel]> {
-    const tokenizer = AutoTokenizer.from_pretrained(modelName)
-    const processor = AutoProcessor.from_pretrained(modelName)
-    const model = WhisperForConditionalGeneration.from_pretrained(modelName, {
-      dtype: {
-        encoder_model: 'fp32', // 'fp16' works too
-        decoder_model_merged: 'q4' // or 'fp32' ('fp16' is broken)
-      }
-    })
-    return Promise.all([tokenizer, processor, model])
-  } //TODO : unloadModel
+  // private async createModel(
+  //   modelName: string
+  // ): Promise<[PreTrainedTokenizer, Processor, PreTrainedModel]> {
+  //   const tokenizer = AutoTokenizer.from_pretrained(modelName)
+  //   const processor = AutoProcessor.from_pretrained(modelName)
+  //   const model = WhisperForConditionalGeneration.from_pretrained(modelName, {
+  //     dtype: {
+  //       encoder_model: 'fp32', // 'fp16' works too
+  //       decoder_model_merged: 'q4' // or 'fp32' ('fp16' is broken)
+  //     }
+  //   })
+  //   return Promise.all([tokenizer, processor, model])
+  // } //TODO : unloadModel
 
   async getModels(): Promise<Model[]> {
     return Promise.resolve(ModelService.models)

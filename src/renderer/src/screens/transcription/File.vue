@@ -47,6 +47,7 @@ import axios from 'axios'
 import { Input } from '@/components/ui/input'
 import { AlertDescription } from '@/components/ui/alert'
 import { VideoProgress } from 'ytdlp-nodejs'
+import ollama from 'ollama/browser'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
@@ -166,6 +167,10 @@ async function startLLMServer(): Promise<void> {
   }
 }
 
+async function startOllamaServer(): Promise<void> {
+  await window.asr.startServer('', 'model?.downloadPath')
+}
+
 function isValidHttpUrl(urlToValidate: string): boolean {
   let url
 
@@ -194,6 +199,21 @@ async function downloadAudio(): Promise<void> {
     filePath.value = downloadPath
     console.log(downloadPath)
   })
+}
+
+
+async function ollamaSummarize(): Promise<void> {
+  summary.value = ''
+  const startTime = performance.now()
+  const response = await ollama.chat({
+    model: 'llama3.2:1b',
+    messages: [
+      { role: 'user', content: 'Please summarize the following text: ' + transcription.value }
+    ]
+  })
+  const endTime = performance.now()
+  timeTakenToSummarize.value = millisToMinutesAndSeconds(endTime - startTime)
+  summary.value = response.message.content
 }
 
 async function summarize(): Promise<void> {
@@ -353,11 +373,25 @@ async function summarize(): Promise<void> {
         </div>
         <Button @click="startLLMServer">
           <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
-          Start LLM
+          Start Llama cpp server
         </Button>
+
+        <br />
         <Button @click="summarize">
           <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
-          Summarize
+          Summarize - Llama cpp
+        </Button>
+        <br />  <br />
+
+
+        <Button @click="startOllamaServer">
+          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
+          Start Ollama Server
+        </Button>
+        <br />
+        <Button @click="ollamaSummarize">
+          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
+          Ollama Summarize
         </Button>
       </div>
     </div>
