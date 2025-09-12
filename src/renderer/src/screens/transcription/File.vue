@@ -43,7 +43,7 @@ import VueMarkdown from 'vue-markdown-render'
 import MarkdownItAnchor from 'markdown-it-anchor'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { ChevronsDown, TvMinimalPlay, FileDown } from 'lucide-vue-next'
-import axios from 'axios'
+// import axios from 'axios'
 import { Input } from '@/components/ui/input'
 import { AlertDescription } from '@/components/ui/alert'
 import { VideoProgress } from 'ytdlp-nodejs'
@@ -61,7 +61,7 @@ const isOpen = ref(false)
 
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
-const selectedLLMModel = ref<number>(0)
+// const selectedLLMModel = ref<number>(0)
 const transcriptionPercentage = ref<number>(0)
 const timeTakenToTranscribe = ref<string>('')
 const timeTakenToSummarize = ref<string>('')
@@ -167,9 +167,9 @@ async function transcribeFileWhisper(): Promise<void> {
 //   }
 // }
 
-async function startOllamaServer(): Promise<void> {
-  await window.asr.startServer('', 'model?.downloadPath')
-}
+// async function startOllamaServer(): Promise<void> {
+//   await window.asr.startServer('', 'model?.downloadPath')
+// }
 
 function isValidHttpUrl(urlToValidate: string): boolean {
   let url
@@ -215,57 +215,57 @@ async function ollamaSummarize(): Promise<void> {
   summary.value = response.message.content
 }
 
-async function summarize(): Promise<void> {
-  let count = 0
-  summary.value = ''
-  const startTime = performance.now()
-  axios
-    .post('http://127.0.0.1:8080/v1/chat/completions', {
-      messages: [
-        {
-          role: 'user',
-          content: 'Please summarize the following text: ' + transcription.value
-        }
-      ],
-      stream: false,
-      cache_prompt: false,
-      reasoning_format: 'none',
-      samplers: 'edkypmxt',
-      temperature: 0.8,
-      dynatemp_range: 0,
-      dynatemp_exponent: 1,
-      top_k: 40,
-      top_p: 0.95,
-      min_p: 0.05,
-      typical_p: 1,
-      xtc_probability: 0,
-      xtc_threshold: 0.1,
-      repeat_last_n: 64,
-      repeat_penalty: 1,
-      presence_penalty: 0,
-      frequency_penalty: 0,
-      dry_multiplier: 0,
-      dry_base: 1.75,
-      dry_allowed_length: 2,
-      dry_penalty_last_n: -1,
-      max_tokens: -1,
-      timings_per_token: false
-    })
-    .then(function (response) {
-      console.log(response.data)
-      const endTime = performance.now()
-      timeTakenToSummarize.value = millisToMinutesAndSeconds(endTime - startTime)
-
-      response.data['choices'].forEach((choice) => {
-        summary.value += choice.message.content
-      })
-      console.log(count++)
-    })
-    .catch(function (error) {
-      console.log(error)
-    })
-  // summary.value = await window.asr.summarize(transcription.value)
-}
+// async function summarize(): Promise<void> {
+//   let count = 0
+//   summary.value = ''
+//   const startTime = performance.now()
+//   axios
+//     .post('http://127.0.0.1:8080/v1/chat/completions', {
+//       messages: [
+//         {
+//           role: 'user',
+//           content: 'Please summarize the following text: ' + transcription.value
+//         }
+//       ],
+//       stream: false,
+//       cache_prompt: false,
+//       reasoning_format: 'none',
+//       samplers: 'edkypmxt',
+//       temperature: 0.8,
+//       dynatemp_range: 0,
+//       dynatemp_exponent: 1,
+//       top_k: 40,
+//       top_p: 0.95,
+//       min_p: 0.05,
+//       typical_p: 1,
+//       xtc_probability: 0,
+//       xtc_threshold: 0.1,
+//       repeat_last_n: 64,
+//       repeat_penalty: 1,
+//       presence_penalty: 0,
+//       frequency_penalty: 0,
+//       dry_multiplier: 0,
+//       dry_base: 1.75,
+//       dry_allowed_length: 2,
+//       dry_penalty_last_n: -1,
+//       max_tokens: -1,
+//       timings_per_token: false
+//     })
+//     .then(function (response) {
+//       console.log(response.data)
+//       const endTime = performance.now()
+//       timeTakenToSummarize.value = millisToMinutesAndSeconds(endTime - startTime)
+//
+//       response.data['choices'].forEach((choice) => {
+//         summary.value += choice.message.content
+//       })
+//       console.log(count++)
+//     })
+//     .catch(function (error) {
+//       console.log(error)
+//     })
+//   // summary.value = await window.asr.summarize(transcription.value)
+// }
 </script>
 
 <template>
