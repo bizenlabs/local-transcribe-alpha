@@ -15,6 +15,7 @@ import { computed } from 'vue'
 const route = useRoute()
 
 const breadcrumbs = {
+  '/dependency-manager': ['System', 'Check'],
   '/audio-file-transcribe': ['Transcribe', 'File'],
   '/audio-realtime-transcribe': ['Transcribe', 'Realtime'],
   '/audio-model-manager': ['Models', 'Audio'],

@@ -5,9 +5,11 @@ import Realtime from '@/screens/transcription/Realtime.vue'
 import File from '@/screens/transcription/File.vue'
 import General from '@/screens/settings/General.vue'
 import TextModelManager from '@/screens/TextModelManager.vue'
+import AppDependencies from '@/screens/AppDependencies.vue'
 
 const routes = [
-  { path: '/', redirect: '/audio-file-transcribe' },
+  { path: '/', redirect: '/dependency-manager' },
+  { path: '/dependency-manager', component: AppDependencies },
   { path: '/audio-file-transcribe', component: File },
   { path: '/audio-realtime-transcribe', component: Realtime },
   { path: '/audio-model-manager', component: AudioModelManager },

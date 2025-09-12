@@ -9,6 +9,9 @@ import { downloadYT } from './utils/youTube'
 import { VideoProgress } from 'ytdlp-nodejs'
 import { startServer } from './utils/ollama'
 
+import { dependencyManager } from './modules/core/DependencyManager'
+import Server from './server/server'
+
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
   return autoUpdater
@@ -54,7 +57,7 @@ function createWindow(): void {
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
-
+  // new Server().startAPIServer().then(() => console.log('Backend started'))
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -156,6 +159,28 @@ function registerIPC(): void {
       event.sender.send('ytDownloadProgress', videoProgress)
     }
     return await downloadYT(args[0], onProgress)
+  })
+
+  ipcMain.handle('download:ollama', async (event) => {
+    const onProgress = function (percentage: string): void {
+      event.sender.send('ollamaProgress', percentage)
+    }
+    return await dependencyManager.checkAndDownloadOllama(onProgress)
+  })
+
+  ipcMain.handle('download:jdk', async (event) => {
+    const onProgress = function (percentage: string): void {
+      event.sender.send('jdkProgress', percentage)
+    }
+    return await dependencyManager.checkAndDownloadJDK(onProgress)
+  })
+
+  ipcMain.handle('server:start:backend', async () => {
+    return await new Server().startAPIServer().then(() => console.log('Backend started'))
+  })
+
+  ipcMain.handle('server:start:ollama', async () => {
+    return await new Server().startOllamaServer().then(() => console.log('Backend started'))
   })
 }
 

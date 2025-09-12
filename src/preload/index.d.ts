@@ -28,6 +28,18 @@ declare global {
       startServer: (text: string, modelPath: string) => Promise<string>
       onDownloadYTProgress: (callback: (videoProgress: VideoProgress) => void) => void
       downloadYT: (url: string) => Promise<string>
+      downloadJDK: () => Promise<DownloaderReport>
+      onJDKDownloadProgress: (callback: (percentage: string) => void) => void
+    },
+    download: {
+      ollama: () => Promise<DownloaderReport>
+      ollamaProgress: (callback: (percentage: string) => void) => void,
+      jdk: () => Promise<DownloaderReport>
+      jdkProgress: (callback: (percentage: string) => void) => void,
+    },
+    server: {
+      startBackend: () => Promise<void>
+      startOllama: () => Promise<void>
     }
   }
 }

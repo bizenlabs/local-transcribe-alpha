@@ -160,12 +160,12 @@ async function transcribeFileWhisper(): Promise<void> {
   }
 }
 
-async function startLLMServer(): Promise<void> {
-  let model = models.value.find((model) => model.id === selectedLLMModel.value)
-  if (model && model.downloadPath) {
-    await window.asr.summarize('', model.downloadPath)
-  }
-}
+// async function startLLMServer(): Promise<void> {
+//   let model = models.value.find((model) => model.id === selectedLLMModel.value)
+//   if (model && model.downloadPath) {
+//     await window.asr.summarize('', model.downloadPath)
+//   }
+// }
 
 async function startOllamaServer(): Promise<void> {
   await window.asr.startServer('', 'model?.downloadPath')
@@ -200,7 +200,6 @@ async function downloadAudio(): Promise<void> {
     console.log(downloadPath)
   })
 }
-
 
 async function ollamaSummarize(): Promise<void> {
   summary.value = ''
@@ -351,48 +350,34 @@ async function summarize(): Promise<void> {
         <br />
 
         <div v-if="transcription && transcription.length > 1">
-          <Label class="m-2" for="select-model">LLM Model</Label>
-          <Select id="select-llm-model" v-model="selectedLLMModel">
-            <SelectTrigger class="w-[280px]">
-              <SelectValue placeholder="Select Model" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem
-                  v-for="model in models"
-                  :key="model.id"
-                  :value="model.id"
-                  :disabled="!model.downloadPath"
-                >
-                  {{ model.name }}
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <br />
+          <Button @click="ollamaSummarize">
+            <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
+            Summarize
+          </Button>
+          <!--          <Label class="m-2" for="select-model">LLM Model</Label>-->
+          <!--          <Select id="select-llm-model" v-model="selectedLLMModel">-->
+          <!--            <SelectTrigger class="w-[280px]">-->
+          <!--              <SelectValue placeholder="Select Model" />-->
+          <!--            </SelectTrigger>-->
+          <!--            <SelectContent>-->
+          <!--              <SelectGroup>-->
+          <!--                <SelectItem-->
+          <!--                  v-for="model in models"-->
+          <!--                  :key="model.id"-->
+          <!--                  :value="model.id"-->
+          <!--                  :disabled="!model.downloadPath"-->
+          <!--                >-->
+          <!--                  {{ model.name }}-->
+          <!--                </SelectItem>-->
+          <!--              </SelectGroup>-->
+          <!--            </SelectContent>-->
+          <!--          </Select>-->
+          <!--          <br />-->
         </div>
-        <Button @click="startLLMServer">
-          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
-          Start Llama cpp server
-        </Button>
 
         <br />
-        <Button @click="summarize">
-          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
-          Summarize - Llama cpp
-        </Button>
-        <br />  <br />
 
-
-        <Button @click="startOllamaServer">
-          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
-          Start Ollama Server
-        </Button>
         <br />
-        <Button @click="ollamaSummarize">
-          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
-          Ollama Summarize
-        </Button>
       </div>
     </div>
 
