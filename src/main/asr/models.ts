@@ -74,6 +74,14 @@ export const modelsData: Model[] = [
     url: 'https://github.com/bizenlabs/local-transcribe-alpha/releases/download/hindi/hindi-small-model.bin',
     downloadPath: null,
     size: '494 MB'
+  },
+  {
+    id: 10,
+    name: 'vasista22/whisper-hindi-small',
+    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
+    url: 'https://github.com/bizenlabs/local-transcribe-alpha/releases/download/hindiv/v-hindi-ggml-model.bin',
+    downloadPath: null,
+    size: '487 MB'
   }
   // },
   // {
