@@ -66,6 +66,14 @@ export const modelsData: Model[] = [
     url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-IQ4_XS.gguf',
     downloadPath: null,
     size: '709 MB'
+  },
+  {
+    id: 9,
+    name: 'Small Hindi Converted',
+    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
+    url: 'https://github.com/bizenlabs/local-transcribe-alpha/releases/download/hindi/hindi-small-model.bin',
+    downloadPath: null,
+    size: '494 MB'
   }
   // },
   // {
