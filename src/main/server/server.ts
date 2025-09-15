@@ -13,7 +13,7 @@ export default class Server {
         .replace('app.asar', 'app.asar.unpacked')
     } else {
       jarPath = path
-        .join(__dirname, '../../resources/bin/api/server/server.jar')
+        .join(__dirname, '../../resources/bin/server/server.jar')
         .replace('app.asar', 'app.asar.unpacked')
     }
     const command = '"' + dependencyManager.getJavaPath() + '"' + ' -jar ' + jarPath

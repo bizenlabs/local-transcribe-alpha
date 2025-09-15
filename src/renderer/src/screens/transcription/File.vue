@@ -205,7 +205,7 @@ async function ollamaSummarize(): Promise<void> {
   summary.value = ''
   const startTime = performance.now()
   const response = await ollama.chat({
-    model: 'llama3.2:1b',
+    model: 'gemma2:2b',
     messages: [
       { role: 'user', content: 'Please summarize the following text: ' + transcription.value }
     ]
