@@ -9,7 +9,8 @@ import {
   ChevronsUpDown,
   Search,
   Check,
-  ChevronsUp
+  ChevronsUp,
+  Brain
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import type { Model } from '../../../../types/model'
@@ -41,6 +42,7 @@ import { languages } from '../../../../types/languageCodes'
 import { Switch } from '@/components/ui/switch'
 import { WhisperParams } from '../../../../types/whisperParameters'
 import { Slider } from '@/components/ui/slider'
+import { Badge } from '@/components/ui/badge'
 import VueMarkdown from 'vue-markdown-render'
 import MarkdownItAnchor from 'markdown-it-anchor'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
@@ -50,7 +52,6 @@ import { Input } from '@/components/ui/input'
 import { AlertDescription } from '@/components/ui/alert'
 import { VideoProgress } from 'ytdlp-nodejs'
 import ollama from 'ollama/browser'
-import { Badge } from '@/components/ui/badge'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
@@ -208,6 +209,9 @@ async function downloadAudio(): Promise<void> {
 
 async function ollamaSummarize(): Promise<void> {
   summary.value = ''
+  if (!prompt.value) {
+    return
+  }
   const userPrompt = prompt.value ? prompt.value : 'Please summarize the following text: '
   console.log('userPrompt', userPrompt)
   const startTime = performance.now()
@@ -229,6 +233,7 @@ async function ollamaSummarize(): Promise<void> {
   const endTime = performance.now()
   timeTakenToSummarize.value = millisToMinutesAndSeconds(endTime - startTime)
   isOllamaSummarize.value = false
+  prompt.value = ''
 }
 </script>
 
@@ -485,15 +490,19 @@ async function ollamaSummarize(): Promise<void> {
         </Badge>
       </div>
       <br />
-      <Textarea
-        v-model="prompt"
-        :disabled="isOllamaSummarize"
-        placeholder="Chat with your transcript."
-        @keydown.enter.exact.prevent="ollamaSummarize()"
-      />
+      <div class="grid w-full gap-2">
+        <Textarea
+          v-model="prompt"
+          :disabled="isOllamaSummarize"
+          placeholder="Chat with your transcript."
+          @keydown.enter.exact.prevent="ollamaSummarize()"
+        />
+        <Button :disabled="isOllamaSummarize" @click="ollamaSummarize"><Brain></Brain>Enter</Button>
+      </div>
     </div>
   </section>
   <br />
+  <!--  v-if="youTubeUrl.trim() && isValidYouTubeUrl" @click="downloadAudio"-->
   <div class="fixed bottom-1 right-0 left-0"></div>
 </template>
 
