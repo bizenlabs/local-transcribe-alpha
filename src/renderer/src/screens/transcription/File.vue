@@ -34,6 +34,8 @@ import {
   ComboboxAnchor,
   ComboboxTrigger
 } from '@/components/ui/combobox'
+import { Textarea } from '@/components/ui/textarea'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn, millisToMinutesAndSeconds } from '@/lib/utils'
 import { languages } from '../../../../types/languageCodes'
 import { Switch } from '@/components/ui/switch'
@@ -48,6 +50,7 @@ import { Input } from '@/components/ui/input'
 import { AlertDescription } from '@/components/ui/alert'
 import { VideoProgress } from 'ytdlp-nodejs'
 import ollama from 'ollama/browser'
+import { Badge } from '@/components/ui/badge'
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
@@ -72,8 +75,10 @@ const numberOfProcessors = ref<number[] | undefined>([2])
 const isDownloadInProgress = ref<boolean>(false)
 const downloadPercentage = ref<number>(0)
 
+const isOllamaSummarize = ref<boolean>(false)
 const lang = ref<(typeof languages)[0]>(languages[0])
 const plugins = [MarkdownItAnchor]
+const prompt = ref<string>('')
 
 function getModelList(): void {
   console.log('getModelList')
@@ -181,7 +186,7 @@ function isValidHttpUrl(urlToValidate: string): boolean {
     return false
   }
 
-  return url.protocol === 'http:' || url.protocol === 'https:'
+  return url.protocol === 'https:'
 }
 async function validateURL(url: string): Promise<void> {
   console.log(url)
@@ -203,69 +208,28 @@ async function downloadAudio(): Promise<void> {
 
 async function ollamaSummarize(): Promise<void> {
   summary.value = ''
+  const userPrompt = prompt.value ? prompt.value : 'Please summarize the following text: '
+  console.log('userPrompt', userPrompt)
   const startTime = performance.now()
+  isOllamaSummarize.value = true
   const response = await ollama.chat({
     model: 'gemma2:2b',
+    stream: true,
     messages: [
-      { role: 'user', content: 'Please summarize the following text: ' + transcription.value }
+      {
+        role: 'user',
+        content: userPrompt + '  ' + transcription.value
+      }
     ]
   })
+
+  for await (const part of response) {
+    summary.value += part.message.content
+  }
   const endTime = performance.now()
   timeTakenToSummarize.value = millisToMinutesAndSeconds(endTime - startTime)
-  summary.value = response.message.content
+  isOllamaSummarize.value = false
 }
-
-// async function summarize(): Promise<void> {
-//   let count = 0
-//   summary.value = ''
-//   const startTime = performance.now()
-//   axios
-//     .post('http://127.0.0.1:8080/v1/chat/completions', {
-//       messages: [
-//         {
-//           role: 'user',
-//           content: 'Please summarize the following text: ' + transcription.value
-//         }
-//       ],
-//       stream: false,
-//       cache_prompt: false,
-//       reasoning_format: 'none',
-//       samplers: 'edkypmxt',
-//       temperature: 0.8,
-//       dynatemp_range: 0,
-//       dynatemp_exponent: 1,
-//       top_k: 40,
-//       top_p: 0.95,
-//       min_p: 0.05,
-//       typical_p: 1,
-//       xtc_probability: 0,
-//       xtc_threshold: 0.1,
-//       repeat_last_n: 64,
-//       repeat_penalty: 1,
-//       presence_penalty: 0,
-//       frequency_penalty: 0,
-//       dry_multiplier: 0,
-//       dry_base: 1.75,
-//       dry_allowed_length: 2,
-//       dry_penalty_last_n: -1,
-//       max_tokens: -1,
-//       timings_per_token: false
-//     })
-//     .then(function (response) {
-//       console.log(response.data)
-//       const endTime = performance.now()
-//       timeTakenToSummarize.value = millisToMinutesAndSeconds(endTime - startTime)
-//
-//       response.data['choices'].forEach((choice) => {
-//         summary.value += choice.message.content
-//       })
-//       console.log(count++)
-//     })
-//     .catch(function (error) {
-//       console.log(error)
-//     })
-//   // summary.value = await window.asr.summarize(transcription.value)
-// }
 </script>
 
 <template>
@@ -273,6 +237,7 @@ async function ollamaSummarize(): Promise<void> {
   <Separator orientation="horizontal" />
 
   <div class="col-span-full">
+    <!--Model not downloaded    -->
     <div
       v-if="!isModelAvailable"
       id="no-model-downloaded"
@@ -291,6 +256,7 @@ async function ollamaSummarize(): Promise<void> {
       </div>
     </div>
 
+    <!--File not selected    -->
     <div
       v-if="!filePath"
       class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-3 py-10"
@@ -302,12 +268,12 @@ async function ollamaSummarize(): Promise<void> {
           <p class="text-xs/5 text-gray-600">mp3, wav up to X? MB</p>
         </span>
       </div>
-      <span class="size-9 text-gray-300"></span>
+      <!--      <span class="size-9 text-gray-290"></span>-->
 
-      <div class="text-center mx-20">
+      <div class="text-center mx-10">
         <span>
           <TvMinimalPlay class="mx-auto size-9 text-gray-300"></TvMinimalPlay>
-          <p class="mt-1 font-semibold text-gray-900">Transcribe YouTube</p>
+          <p class="mt-1 font-semibold text-gray-900">YouTube</p>
         </span>
         <Input
           v-model="youTubeUrl"
@@ -317,11 +283,11 @@ async function ollamaSummarize(): Promise<void> {
         />
         <Progress v-if="isDownloadInProgress" v-model="downloadPercentage" />
         <br />
-        <Button v-if="isValidYouTubeUrl" @click="downloadAudio"
+        <Button v-if="youTubeUrl.trim() && isValidYouTubeUrl" @click="downloadAudio"
           ><FileDown></FileDown> Download</Button
         >
 
-        <AlertDescription v-if="!isValidYouTubeUrl" class="text-red-600">
+        <AlertDescription v-if="youTubeUrl.trim() && !isValidYouTubeUrl" class="text-red-600">
           Invalid URL.
         </AlertDescription>
       </div>
@@ -354,25 +320,6 @@ async function ollamaSummarize(): Promise<void> {
             <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
             Summarize
           </Button>
-          <!--          <Label class="m-2" for="select-model">LLM Model</Label>-->
-          <!--          <Select id="select-llm-model" v-model="selectedLLMModel">-->
-          <!--            <SelectTrigger class="w-[280px]">-->
-          <!--              <SelectValue placeholder="Select Model" />-->
-          <!--            </SelectTrigger>-->
-          <!--            <SelectContent>-->
-          <!--              <SelectGroup>-->
-          <!--                <SelectItem-->
-          <!--                  v-for="model in models"-->
-          <!--                  :key="model.id"-->
-          <!--                  :value="model.id"-->
-          <!--                  :disabled="!model.downloadPath"-->
-          <!--                >-->
-          <!--                  {{ model.name }}-->
-          <!--                </SelectItem>-->
-          <!--              </SelectGroup>-->
-          <!--            </SelectContent>-->
-          <!--          </Select>-->
-          <!--          <br />-->
         </div>
 
         <br />
@@ -384,133 +331,170 @@ async function ollamaSummarize(): Promise<void> {
     <div v-if="models.length > 0 && isModelAvailable">
       <br />
       <Progress v-if="isTranscribing" v-model="transcriptionPercentage" />
-      <p v-if="timeTakenToTranscribe">Time Taken Transcribe: {{ timeTakenToTranscribe }} minutes</p>
-      <p v-if="timeTakenToSummarize">Time Taken Summarize: {{ timeTakenToSummarize }} minutes</p>
-      <Label class="m-2" for="select-model">Model</Label>
-      <Select id="select-model" v-model="selectedModel">
-        <SelectTrigger class="w-[280px]">
-          <SelectValue placeholder="Select Model" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectItem
-              v-for="model in models"
-              :key="model.id"
-              :value="model.id"
-              :disabled="!model.downloadPath"
-            >
-              {{ model.name }}
-            </SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      <br />
-      <Label class="m-2" for="select-language">Language</Label>
-      <Combobox id="select-language" v-model="lang" by="label">
-        <ComboboxAnchor as-child>
-          <ComboboxTrigger as-child class="w-[280px]">
-            <Button variant="outline" class="justify-between">
-              {{ lang?.label ?? 'Select language' }}
 
-              <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </ComboboxTrigger>
-        </ComboboxAnchor>
+      <div v-if="!transcription || transcription.length < 1" id="transcription-parameters">
+        <Label class="m-2" for="select-model">Model</Label>
+        <Select id="select-model" v-model="selectedModel">
+          <SelectTrigger class="w-[280px]">
+            <SelectValue placeholder="Select Model" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem
+                v-for="model in models"
+                :key="model.id"
+                :value="model.id"
+                :disabled="!model.downloadPath"
+              >
+                {{ model.name }}
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <br />
+        <Label class="m-2" for="select-language">Language</Label>
+        <Combobox id="select-language" v-model="lang" by="label">
+          <ComboboxAnchor as-child>
+            <ComboboxTrigger as-child class="w-[280px]">
+              <Button variant="outline" class="justify-between">
+                {{ lang?.label ?? 'Select language' }}
 
-        <ComboboxList class="w-[280px]">
-          <div class="relative w-full max-w-sm items-center">
-            <ComboboxInput
-              class="pl-9 focus-visible:ring-0 border-0 border-b rounded-none h-10"
-              placeholder="Select language..."
-            />
-            <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
-              <Search class="size-4 text-muted-foreground" />
-            </span>
+                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </ComboboxTrigger>
+          </ComboboxAnchor>
+
+          <ComboboxList class="w-[280px]">
+            <div class="relative w-full max-w-sm items-center">
+              <ComboboxInput
+                class="pl-9 focus-visible:ring-0 border-0 border-b rounded-none h-10"
+                placeholder="Select language..."
+              />
+              <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
+                <Search class="size-4 text-muted-foreground" />
+              </span>
+            </div>
+
+            <ComboboxEmpty> No language found. </ComboboxEmpty>
+
+            <ComboboxGroup>
+              <ComboboxItem v-for="language in languages" :key="language.value" :value="language">
+                {{ language.label }}
+
+                <ComboboxItemIndicator>
+                  <Check :class="cn('ml-auto h-4 w-4')" />
+                </ComboboxItemIndicator>
+              </ComboboxItem>
+            </ComboboxGroup>
+          </ComboboxList>
+        </Combobox>
+        <br />
+        <Collapsible v-model:open="isOpen" class="w-[300px]">
+          <div class="flex items-center justify-between space-x-4 px-3">
+            <!--          <h3 class="text-sm font-bold">Advanced Options</h3>-->
+            <Label>Advanced Options</Label>
+            <CollapsibleTrigger as-child>
+              <Button variant="ghost" size="sm" class="w-9 p-0">
+                <!--              <ChevronsUpDown class="h-4 w-4" />-->
+                <ChevronsDown v-if="!isOpen" />
+                <ChevronsUp v-if="isOpen" />
+                <span class="sr-only">Toggle</span>
+              </Button>
+            </CollapsibleTrigger>
           </div>
-
-          <ComboboxEmpty> No language found. </ComboboxEmpty>
-
-          <ComboboxGroup>
-            <ComboboxItem v-for="language in languages" :key="language.value" :value="language">
-              {{ language.label }}
-
-              <ComboboxItemIndicator>
-                <Check :class="cn('ml-auto h-4 w-4')" />
-              </ComboboxItemIndicator>
-            </ComboboxItem>
-          </ComboboxGroup>
-        </ComboboxList>
-      </Combobox>
-      <br />
-      <Collapsible v-model:open="isOpen" class="w-[300px]">
-        <div class="flex items-center justify-between space-x-4 px-3">
-          <!--          <h3 class="text-sm font-bold">Advanced Options</h3>-->
-          <Label>Advanced Options</Label>
-          <CollapsibleTrigger as-child>
-            <Button variant="ghost" size="sm" class="w-9 p-0">
-              <!--              <ChevronsUpDown class="h-4 w-4" />-->
-              <ChevronsDown v-if="!isOpen" />
-              <ChevronsUp v-if="isOpen" />
-              <span class="sr-only">Toggle</span>
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-        <CollapsibleContent>
-          <div class="flex items-center space-x-2">
-            <Switch id="use-gpu" v-model="useGPU" />
-            <Label for="use-gpu">Use GPU</Label>
-          </div>
-          <div class="flex items-center space-x-2 w-[280px]">
-            <Label class="m-2 text-s" for="number-threads">Number of Threads</Label>
-            <p>{{ numberOfThreads ? numberOfThreads[0] : '' }}</p>
-            <Slider
-              id="number-threads"
-              :value="numberOfThreads"
-              :default-value="[8]"
-              :max="50"
-              :min="1"
-              :step="1"
-              @update:model-value="(value) => (numberOfThreads = value)"
-            />
-          </div>
-          <div class="flex items-center space-x-2 w-[280px]">
-            <Label class="m-2 text-s" for="number-threads">Number of Processors</Label>
-            <p>{{ numberOfProcessors ? numberOfProcessors[0] : '' }}</p>
-            <Slider
-              id="number-threads"
-              :value="numberOfProcessors"
-              :default-value="[8]"
-              :max="16"
-              :min="1"
-              :step="1"
-              @update:model-value="(value) => (numberOfProcessors = value)"
-            />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+          <CollapsibleContent>
+            <div class="flex items-center space-x-2">
+              <Switch id="use-gpu" v-model="useGPU" />
+              <Label for="use-gpu">Use GPU</Label>
+            </div>
+            <div class="flex items-center space-x-2 w-[280px]">
+              <Label class="m-2 text-s" for="number-threads">Number of Threads</Label>
+              <p>{{ numberOfThreads ? numberOfThreads[0] : '' }}</p>
+              <Slider
+                id="number-threads"
+                :value="numberOfThreads"
+                :default-value="[8]"
+                :max="50"
+                :min="1"
+                :step="1"
+                @update:model-value="(value) => (numberOfThreads = value)"
+              />
+            </div>
+            <div class="flex items-center space-x-2 w-[280px]">
+              <Label class="m-2 text-s" for="number-threads">Number of Processors</Label>
+              <p>{{ numberOfProcessors ? numberOfProcessors[0] : '' }}</p>
+              <Slider
+                id="number-threads"
+                :value="numberOfProcessors"
+                :default-value="[8]"
+                :max="16"
+                :min="1"
+                :step="1"
+                @update:model-value="(value) => (numberOfProcessors = value)"
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
     </div>
     <br />
   </section>
 
-  <div v-if="summary">
-    <h2>Summary</h2>
-
-    <vue-markdown :source="summary" :plugins="plugins" />
-
-    <!--    {{ summary }}-->
-    <!--    <div v-html="summary"></div>-->
-  </div>
-
-  <br /><br />
   <!--  {{ transcription }}-->
-  <br /><br />
+
   <section>
     <div v-if="transcriptionTimestamp && transcriptionTimestamp.length > 0">
-      <div v-for="(snippet, index) in transcriptionTimestamp" :key="index">
-        {{ snippet }}
+      <h2 class="font-bold text-black">
+        Transcript:
+        <span v-if="timeTakenToTranscribe"> ({{ timeTakenToTranscribe }} minutes)</span>
+      </h2>
+
+      <ScrollArea class="h-[200px] rounded-md border p-4">
+        <div v-for="(snippet, index) in transcriptionTimestamp" :key="index">
+          {{ snippet }}
+        </div>
+      </ScrollArea>
+      <br />
+      <div v-if="summary">
+        <h2 class="font-bold text-black">
+          Output:
+          <span v-if="timeTakenToSummarize"> ({{ timeTakenToSummarize }} minutes)</span>
+        </h2>
+        <ScrollArea class="h-[200px] rounded-md border p-4">
+          <vue-markdown :source="summary" :plugins="plugins" />
+        </ScrollArea>
+        <br />
       </div>
+      <div class="flex items-center space-x-1 w-[280px] cursor-pointer">
+        <Badge variant="secondary" @click="prompt = 'Summarize this transcript.'">
+          Summarize
+        </Badge>
+        <Badge
+          variant="secondary"
+          @click="prompt = 'Extract all questions asked in this transcript.'"
+        >
+          Extract questions
+        </Badge>
+        <Badge
+          variant="secondary"
+          @click="
+            prompt = 'Extract questions Identify and highlight the key points in this transcript.'
+          "
+        >
+          Highlight Key points
+        </Badge>
+      </div>
+      <br />
+      <Textarea
+        v-model="prompt"
+        :disabled="isOllamaSummarize"
+        placeholder="Chat with your transcript."
+        @keydown.enter.exact.prevent="ollamaSummarize()"
+      />
     </div>
   </section>
+  <br />
+  <div class="fixed bottom-1 right-0 left-0"></div>
 </template>
 
 <style scoped></style>

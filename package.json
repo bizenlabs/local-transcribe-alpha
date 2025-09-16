@@ -1,6 +1,6 @@
 {
   "name": "local-transcribe-alpha",
-  "version": "1.0.39",
+  "version": "1.0.40",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -59,7 +59,7 @@
     "vee-validate": "^4.15.1",
     "vue-markdown-render": "^2.2.1",
     "vue-router": "^4.5.1",
-    "vue-sonner": "^2.0.2",
+    "vue-sonner": "^2.0.8",
     "wavefile": "^11.0.0",
     "ytdlp-nodejs": "^2.3.4",
     "zod": "^3.25.76"
