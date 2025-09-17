@@ -9,7 +9,6 @@ import {
   ChevronsUpDown,
   Search,
   Check,
-  ChevronsUp,
   Brain
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -39,14 +38,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn, millisToMinutesAndSeconds } from '@/lib/utils'
 import { languages } from '../../../../types/languageCodes'
-import { Switch } from '@/components/ui/switch'
 import { WhisperParams } from '../../../../types/whisperParameters'
-import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
 import VueMarkdown from 'vue-markdown-render'
 import MarkdownItAnchor from 'markdown-it-anchor'
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
-import { ChevronsDown, TvMinimalPlay, FileDown } from 'lucide-vue-next'
+import { TvMinimalPlay, FileDown } from 'lucide-vue-next'
 // import axios from 'axios'
 import { Input } from '@/components/ui/input'
 import { AlertDescription } from '@/components/ui/alert'
@@ -61,7 +57,7 @@ const summary = ref<string>()
 const isTranscribing = ref<boolean>(false)
 const isModelAvailable = ref<boolean>(false)
 const useGPU = ref<boolean>(true)
-const isOpen = ref(false)
+// const isOpen = ref(false)
 
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
@@ -131,6 +127,8 @@ async function transcribeFileWhisper(): Promise<void> {
   isTranscribing.value = true
   transcriptionPercentage.value = 0
   timeTakenToTranscribe.value = ''
+  transcription.value = ''
+  summary.value = ''
   let model = models.value.find((model) => model.id === selectedModel.value)
   if (model && model.downloadPath) {
     const startTime = performance.now()
@@ -209,6 +207,7 @@ async function downloadAudio(): Promise<void> {
 
 async function ollamaSummarize(): Promise<void> {
   summary.value = ''
+  timeTakenToSummarize.value = ''
   if (!prompt.value) {
     return
   }
@@ -264,7 +263,7 @@ async function ollamaSummarize(): Promise<void> {
     <!--File not selected    -->
     <div
       v-if="!filePath"
-      class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-3 py-10"
+      class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-2 py-10"
     >
       <div class="text-center">
         <span @click="selectFile">
@@ -273,7 +272,6 @@ async function ollamaSummarize(): Promise<void> {
           <p class="text-xs/5 text-gray-600">mp3, wav up to X? MB</p>
         </span>
       </div>
-      <!--      <span class="size-9 text-gray-290"></span>-->
 
       <div class="text-center mx-10">
         <span>
@@ -288,10 +286,9 @@ async function ollamaSummarize(): Promise<void> {
         />
         <Progress v-if="isDownloadInProgress" v-model="downloadPercentage" />
         <br />
-        <Button v-if="youTubeUrl.trim() && isValidYouTubeUrl" @click="downloadAudio"
-          ><FileDown></FileDown> Download</Button
-        >
-
+        <Button v-if="youTubeUrl.trim() && isValidYouTubeUrl" @click="downloadAudio">
+          <FileDown></FileDown> Download
+        </Button>
         <AlertDescription v-if="youTubeUrl.trim() && !isValidYouTubeUrl" class="text-red-600">
           Invalid URL.
         </AlertDescription>
@@ -300,46 +297,33 @@ async function ollamaSummarize(): Promise<void> {
   </div>
 
   <section v-if="filePath" id="transcription">
-    <!--    <div>-->
-    <!--      <p class="text-lg font-medium">Transcription Configuration</p>-->
-    <!--      <p class="text-sm text-muted-foreground">-->
-    <!--        Select the right configuration for your transcription.-->
-    <!--      </p>-->
-    <!--    </div>-->
-    <!--    <Separator />-->
-    <Label class="m-2">File</Label>
+    <!--    <Label class="m-2 font-bold text-black">File</Label>-->
     <div class="flex items-center space-x-2 text-sm text-gray-500">
       <AudioLines class="inline" /> {{ filePath }}
       <Trash class="ml-2 text-red-400 inline" :size="18" @click="clearSelectedFile" />
       <div class="ml-auto mr-4">
-        <br />
         <Button :disabled="!isModelAvailable || isTranscribing" @click="transcribeFileWhisper">
           <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
           Start Transcription
         </Button>
-        <br />
-        <br />
-
-        <div v-if="transcription && transcription.length > 1">
-          <Button @click="ollamaSummarize">
-            <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
-            Summarize
-          </Button>
-        </div>
-
-        <br />
-
-        <br />
       </div>
     </div>
 
     <div v-if="models.length > 0 && isModelAvailable">
+      <!--      <Collapsible v-model:open="isOpen" class="w-[300px]"> </Collapsible>-->
       <br />
-      <Progress v-if="isTranscribing" v-model="transcriptionPercentage" />
+      <span v-if="isTranscribing">
+        <Progress v-model="transcriptionPercentage" />
+        <br />
+      </span>
 
-      <div v-if="!transcription || transcription.length < 1" id="transcription-parameters">
-        <Label class="m-2" for="select-model">Model</Label>
-        <Select id="select-model" v-model="selectedModel">
+      <div id="transcription-parameters" class="flex items-center space-x-2 text-sm">
+        <Label class="m-2 font-bold text-black" for="select-model">Model:</Label>
+        <Select
+          id="select-model"
+          v-model="selectedModel"
+          :disabled="!isModelAvailable || isTranscribing"
+        >
           <SelectTrigger class="w-[280px]">
             <SelectValue placeholder="Select Model" />
           </SelectTrigger>
@@ -357,8 +341,13 @@ async function ollamaSummarize(): Promise<void> {
           </SelectContent>
         </Select>
         <br />
-        <Label class="m-2" for="select-language">Language</Label>
-        <Combobox id="select-language" v-model="lang" by="label">
+        <Label class="m-2 font-bold text-black" for="select-language">Language:</Label>
+        <Combobox
+          id="select-language"
+          v-model="lang"
+          by="label"
+          :disabled="!isModelAvailable || isTranscribing"
+        >
           <ComboboxAnchor as-child>
             <ComboboxTrigger as-child class="w-[280px]">
               <Button variant="outline" class="justify-between">
@@ -394,52 +383,52 @@ async function ollamaSummarize(): Promise<void> {
           </ComboboxList>
         </Combobox>
         <br />
-        <Collapsible v-model:open="isOpen" class="w-[300px]">
-          <div class="flex items-center justify-between space-x-4 px-3">
-            <!--          <h3 class="text-sm font-bold">Advanced Options</h3>-->
-            <Label>Advanced Options</Label>
-            <CollapsibleTrigger as-child>
-              <Button variant="ghost" size="sm" class="w-9 p-0">
-                <!--              <ChevronsUpDown class="h-4 w-4" />-->
-                <ChevronsDown v-if="!isOpen" />
-                <ChevronsUp v-if="isOpen" />
-                <span class="sr-only">Toggle</span>
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent>
-            <div class="flex items-center space-x-2">
-              <Switch id="use-gpu" v-model="useGPU" />
-              <Label for="use-gpu">Use GPU</Label>
-            </div>
-            <div class="flex items-center space-x-2 w-[280px]">
-              <Label class="m-2 text-s" for="number-threads">Number of Threads</Label>
-              <p>{{ numberOfThreads ? numberOfThreads[0] : '' }}</p>
-              <Slider
-                id="number-threads"
-                :value="numberOfThreads"
-                :default-value="[8]"
-                :max="50"
-                :min="1"
-                :step="1"
-                @update:model-value="(value) => (numberOfThreads = value)"
-              />
-            </div>
-            <div class="flex items-center space-x-2 w-[280px]">
-              <Label class="m-2 text-s" for="number-threads">Number of Processors</Label>
-              <p>{{ numberOfProcessors ? numberOfProcessors[0] : '' }}</p>
-              <Slider
-                id="number-threads"
-                :value="numberOfProcessors"
-                :default-value="[8]"
-                :max="16"
-                :min="1"
-                :step="1"
-                @update:model-value="(value) => (numberOfProcessors = value)"
-              />
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        <!--        <Collapsible v-model:open="isOpen" class="w-[300px]">-->
+        <!--          <div class="flex items-center justify-between space-x-4 px-3">-->
+        <!--            &lt;!&ndash;          <h3 class="text-sm font-bold">Advanced Options</h3>&ndash;&gt;-->
+        <!--            <Label>Advanced Options</Label>-->
+        <!--            <CollapsibleTrigger as-child>-->
+        <!--              <Button variant="ghost" size="sm" class="w-9 p-0">-->
+        <!--                &lt;!&ndash;              <ChevronsUpDown class="h-4 w-4" />&ndash;&gt;-->
+        <!--                <ChevronsDown v-if="!isOpen" />-->
+        <!--                <ChevronsUp v-if="isOpen" />-->
+        <!--                <span class="sr-only">Toggle</span>-->
+        <!--              </Button>-->
+        <!--            </CollapsibleTrigger>-->
+        <!--          </div>-->
+        <!--          <CollapsibleContent>-->
+        <!--            <div class="flex items-center space-x-2">-->
+        <!--              <Switch id="use-gpu" v-model="useGPU" />-->
+        <!--              <Label for="use-gpu">Use GPU</Label>-->
+        <!--            </div>-->
+        <!--            <div class="flex items-center space-x-2 w-[280px]">-->
+        <!--              <Label class="m-2 text-s" for="number-threads">Number of Threads</Label>-->
+        <!--              <p>{{ numberOfThreads ? numberOfThreads[0] : '' }}</p>-->
+        <!--              <Slider-->
+        <!--                id="number-threads"-->
+        <!--                :value="numberOfThreads"-->
+        <!--                :default-value="[8]"-->
+        <!--                :max="50"-->
+        <!--                :min="1"-->
+        <!--                :step="1"-->
+        <!--                @update:model-value="(value) => (numberOfThreads = value)"-->
+        <!--              />-->
+        <!--            </div>-->
+        <!--            <div class="flex items-center space-x-2 w-[280px]">-->
+        <!--              <Label class="m-2 text-s" for="number-threads">Number of Processors</Label>-->
+        <!--              <p>{{ numberOfProcessors ? numberOfProcessors[0] : '' }}</p>-->
+        <!--              <Slider-->
+        <!--                id="number-threads"-->
+        <!--                :value="numberOfProcessors"-->
+        <!--                :default-value="[8]"-->
+        <!--                :max="16"-->
+        <!--                :min="1"-->
+        <!--                :step="1"-->
+        <!--                @update:model-value="(value) => (numberOfProcessors = value)"-->
+        <!--              />-->
+        <!--            </div>-->
+        <!--          </CollapsibleContent>-->
+        <!--        </Collapsible>-->
       </div>
     </div>
     <br />
@@ -449,24 +438,37 @@ async function ollamaSummarize(): Promise<void> {
 
   <section>
     <div v-if="transcriptionTimestamp && transcriptionTimestamp.length > 0">
-      <h2 class="font-bold text-black">
+      <Label class="font-bold text-black" for="select-model">
         Transcript:
-        <span v-if="timeTakenToTranscribe"> ({{ timeTakenToTranscribe }} minutes)</span>
-      </h2>
+        <span v-if="timeTakenToTranscribe"> ({{ timeTakenToTranscribe }} minutes)</span></Label
+      >
 
-      <ScrollArea class="h-[200px] rounded-md border p-4">
-        <div v-for="(snippet, index) in transcriptionTimestamp" :key="index">
-          {{ snippet }}
+      <ScrollArea class="h-[200px] rounded-md border p-4 mt-2">
+        <div
+          v-for="(snippet, index) in transcriptionTimestamp"
+          :key="index"
+          class="col-span-2 grid grid-cols-subgrid items-baseline"
+        >
+          <Badge variant="secondary"> {{ snippet[1].split('.')[0] }} </Badge>
+          <p class="text-sm/7 whitespace-pre-wrap text-gray-700 dark:text-gray-400">
+            {{ snippet[2] }}
+          </p>
+          <br />
         </div>
       </ScrollArea>
       <br />
       <div v-if="summary">
-        <h2 class="font-bold text-black">
+        <Label class="font-bold text-black" for="select-model">
           Output:
           <span v-if="timeTakenToSummarize"> ({{ timeTakenToSummarize }} minutes)</span>
-        </h2>
-        <ScrollArea class="h-[200px] rounded-md border p-4">
-          <vue-markdown :source="summary" :plugins="plugins" />
+        </Label>
+
+        <ScrollArea class="h-[200px] rounded-md border p-4 mt-2">
+          <vue-markdown
+            :source="summary"
+            :plugins="plugins"
+            class="text-sm/7 whitespace-pre-wrap"
+          />
         </ScrollArea>
         <br />
       </div>
