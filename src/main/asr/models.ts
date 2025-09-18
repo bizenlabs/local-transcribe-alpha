@@ -45,30 +45,6 @@ export const modelsData: Model[] = [
   },
   {
     id: 6,
-    name: 'Llama-3.2-3B-Instruct-IQ4_XS',
-    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
-    url: 'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-IQ4_XS.gguf',
-    downloadPath: null,
-    size: '1.7.GB'
-  },
-  {
-    id: 7,
-    name: 'meta-llama/Meta-Llama-3.1-8B-Instruct:Q4_K_S',
-    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
-    url: 'https://huggingface.co/MaziyarPanahi/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct.Q4_K_S.gguf',
-    downloadPath: null,
-    size: '4.69 GB'
-  },
-  {
-    id: 8,
-    name: 'Llama-3.2-1B-Instruct-IQ4_XS',
-    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
-    url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-IQ4_XS.gguf',
-    downloadPath: null,
-    size: '709 MB'
-  },
-  {
-    id: 9,
     name: 'Small Hindi Converted',
     description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
     url: 'https://github.com/bizenlabs/local-transcribe-alpha/releases/download/hindi/hindi-small-model.bin',
@@ -76,20 +52,19 @@ export const modelsData: Model[] = [
     size: '494 MB'
   },
   {
-    id: 10,
+    id: 7,
     name: 'vasista22/whisper-hindi-small',
     description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
     url: 'https://github.com/bizenlabs/local-transcribe-alpha/releases/download/hindiv/v-hindi-ggml-model.bin',
     downloadPath: null,
     size: '487 MB'
+  },
+  {
+    id: 8,
+    name: 'ARTPARK-IISc/whisper-large-v3-vaani-hindi',
+    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
+    url: 'https://huggingface.co/kgidwani/hindi-large/resolve/main/large-ggml-model.bin',
+    downloadPath: null,
+    size: '3,1 GB'
   }
-  // },
-  // {
-  //   id: 8,
-  //   name: 'DeepSeek-R1-Distill-Qwen-7B-Uncensored-i1-GGUF',
-  //   description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
-  //   url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-IQ4_XS.gguf',
-  //   downloadPath: null,
-  //   size: '709 MB'
-  // }
 ]
