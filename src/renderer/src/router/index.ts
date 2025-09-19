@@ -4,7 +4,7 @@ import AudioModelManager from '@/screens/transcription/AudioModelManager.vue'
 import Realtime from '@/screens/transcription/Realtime.vue'
 import File from '@/screens/transcription/File.vue'
 import General from '@/screens/settings/General.vue'
-import TextModelManager from '@/screens/TextModelManager.vue'
+import OllamaModels from '@/screens/models/ollama/OllamaModels.vue'
 import AppDependencies from '@/screens/AppDependencies.vue'
 
 const routes = [
@@ -13,7 +13,7 @@ const routes = [
   { path: '/audio-file-transcribe', component: File },
   { path: '/audio-realtime-transcribe', component: Realtime },
   { path: '/audio-model-manager', component: AudioModelManager },
-  { path: '/text-model-manager', component: TextModelManager },
+  { path: '/text-model-manager', component: OllamaModels },
   { path: '/general-settings', component: General }
 ]
 

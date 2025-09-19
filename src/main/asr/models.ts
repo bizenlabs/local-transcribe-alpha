@@ -45,23 +45,15 @@ export const modelsData: Model[] = [
   },
   {
     id: 6,
-    name: 'Small Hindi Converted',
-    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
-    url: 'https://github.com/bizenlabs/local-transcribe-alpha/releases/download/hindi/hindi-small-model.bin',
-    downloadPath: null,
-    size: '494 MB'
-  },
-  {
-    id: 7,
-    name: 'vasista22/whisper-hindi-small',
+    name: 'Small -hindi',
     description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
     url: 'https://github.com/bizenlabs/local-transcribe-alpha/releases/download/hindiv/v-hindi-ggml-model.bin',
     downloadPath: null,
     size: '487 MB'
   },
   {
-    id: 8,
-    name: 'ARTPARK-IISc/whisper-large-v3-vaani-hindi',
+    id: 7,
+    name: 'Large v3 -hindi',
     description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
     url: 'https://huggingface.co/kgidwani/hindi-large/resolve/main/large-ggml-model.bin',
     downloadPath: null,
