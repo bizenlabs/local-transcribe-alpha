@@ -1,6 +1,6 @@
 {
   "name": "local-transcribe-alpha",
-  "version": "1.0.43",
+  "version": "1.0.45",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -33,6 +33,7 @@
     "@huggingface/transformers": "^3.7.1",
     "@langchain/core": "^0.3.72",
     "@tailwindcss/vite": "^4.1.11",
+    "@tanstack/vue-table": "^8.21.3",
     "@vee-validate/zod": "^4.15.1",
     "@vueuse/core": "^13.9.0",
     "axios": "^1.11.0",
@@ -50,6 +51,7 @@
     "lucide-vue-next": "^0.536.0",
     "markdown-it-anchor": "^9.2.0",
     "nanospinner": "^1.2.2",
+    "node-llama-cpp": "^3.13.0",
     "nodejs-file-downloader": "^4.13.0",
     "ollama": "^0.5.18",
     "reka-ui": "^2.5.0",
