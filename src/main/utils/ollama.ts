@@ -26,7 +26,8 @@ export const startServer = async (): Promise<void> => {
   })
 
   await ollama.pull({
-    model: 'llama3.2:1b'
+    model: 'llama3.2:3b'
   })
+
   console.log('Model Pulled')
 }

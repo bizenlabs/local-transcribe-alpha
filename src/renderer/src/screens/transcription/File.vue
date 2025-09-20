@@ -1,16 +1,18 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { Separator } from '@/components/ui/separator'
-import { Trash } from 'lucide-vue-next'
-import { onMounted, ref } from 'vue'
 import {
-  AudioLines,
-  FolderPlus,
   AlertCircle,
-  ChevronsUpDown,
-  Search,
+  AudioLines,
+  Brain,
   Check,
-  Brain
+  ChevronsUpDown,
+  FileDown,
+  FolderPlus,
+  Search,
+  Trash,
+  TvMinimalPlay
 } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import type { Model } from '../../../../types/model'
 import { Label } from '@/components/ui/label'
@@ -25,13 +27,13 @@ import {
 import { Progress } from '@/components/ui/progress'
 import {
   Combobox,
-  ComboboxList,
+  ComboboxAnchor,
+  ComboboxEmpty,
   ComboboxGroup,
+  ComboboxInput,
   ComboboxItem,
   ComboboxItemIndicator,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxAnchor,
+  ComboboxList,
   ComboboxTrigger
 } from '@/components/ui/combobox'
 import { Textarea } from '@/components/ui/textarea'
@@ -42,12 +44,31 @@ import { WhisperParams } from '../../../../types/whisperParameters'
 import { Badge } from '@/components/ui/badge'
 import VueMarkdown from 'vue-markdown-render'
 import MarkdownItAnchor from 'markdown-it-anchor'
-import { TvMinimalPlay, FileDown } from 'lucide-vue-next'
 // import axios from 'axios'
 import { Input } from '@/components/ui/input'
 import { AlertDescription } from '@/components/ui/alert'
 import { VideoProgress } from 'ytdlp-nodejs'
 import ollama from 'ollama/browser'
+
+import { ModelResponse } from 'ollama/browser'
+
+const downloadedModels = ref<ModelResponse[]>([])
+const runningModels = ref<ModelResponse[]>([])
+const selectedOllamaModel = ref<string>('llama3.2:3b')
+
+async function getDownloadedModelsAndSaveInRef(): Promise<void> {
+  downloadedModels.value = (await ollama.list()).models
+  console.log('downloadedModels', downloadedModels.value)
+}
+
+async function getRunningModelsAndSaveInRef(): Promise<void> {
+  runningModels.value = (await ollama.ps()).models
+  console.log('runningModels', runningModels.value)
+}
+
+function isModelOnline(modelName: string): boolean {
+  return runningModels.value.findIndex((ollamaModel) => ollamaModel.name === modelName) !== -1
+}
 
 const heading = ref<string>('File Transcription')
 const filePath = ref('')
@@ -96,6 +117,8 @@ onMounted(() => {
   getModelList()
   updateTranscriptionProgress()
   updateDownloadProgress()
+  getDownloadedModelsAndSaveInRef()
+  getRunningModelsAndSaveInRef()
 })
 
 function updateDownloadProgress(): void {
@@ -211,12 +234,14 @@ async function ollamaSummarize(): Promise<void> {
   if (!prompt.value) {
     return
   }
+  // await getDownloadedModelsAndSaveInRef()
+  // await getRunningModelsAndSaveInRef()
   const userPrompt = prompt.value ? prompt.value : 'Please summarize the following text: '
   console.log('userPrompt', userPrompt)
   const startTime = performance.now()
   isOllamaSummarize.value = true
   const response = await ollama.chat({
-    model: 'gemma2:2b',
+    model: selectedOllamaModel.value,
     stream: true,
     messages: [
       {
@@ -249,7 +274,7 @@ async function ollamaSummarize(): Promise<void> {
     >
       <div class="flex">
         <div class="shrink-0">
-          <AlertCircle class="size-5 text-yellow-400 dark:text-yellow-300" aria-hidden="true" />
+          <AlertCircle aria-hidden="true" class="size-5 text-yellow-400 dark:text-yellow-300" />
         </div>
         <div class="ml-3">
           <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-100">Download Model</h3>
@@ -280,8 +305,8 @@ async function ollamaSummarize(): Promise<void> {
         </span>
         <Input
           v-model="youTubeUrl"
-          type="url"
           placeholder="https://www.youtube.com/watch?v=se0nIBJjVfI"
+          type="url"
           @input="validateURL"
         />
         <Progress v-if="isDownloadInProgress" v-model="downloadPercentage" />
@@ -300,10 +325,10 @@ async function ollamaSummarize(): Promise<void> {
     <!--    <Label class="m-2 font-bold text-black">File</Label>-->
     <div class="flex items-center space-x-2 text-sm text-gray-500">
       <AudioLines class="inline" /> {{ filePath }}
-      <Trash class="ml-2 text-red-400 inline" :size="18" @click="clearSelectedFile" />
+      <Trash :size="18" class="ml-2 text-red-400 inline" @click="clearSelectedFile" />
       <div class="ml-auto mr-4">
         <Button :disabled="!isModelAvailable || isTranscribing" @click="transcribeFileWhisper">
-          <AudioLines class="mr-2 h-4 w-4" :class="{ 'animate-bounce': isTranscribing }" />
+          <AudioLines :class="{ 'animate-bounce': isTranscribing }" class="mr-2 h-4 w-4" />
           Start Transcription
         </Button>
       </div>
@@ -332,8 +357,8 @@ async function ollamaSummarize(): Promise<void> {
               <SelectItem
                 v-for="model in models"
                 :key="model.id"
-                :value="model.id"
                 :disabled="!model.downloadPath"
+                :value="model.id"
               >
                 {{ model.name }}
               </SelectItem>
@@ -345,12 +370,12 @@ async function ollamaSummarize(): Promise<void> {
         <Combobox
           id="select-language"
           v-model="lang"
-          by="label"
           :disabled="!isModelAvailable || isTranscribing"
+          by="label"
         >
           <ComboboxAnchor as-child>
             <ComboboxTrigger as-child class="w-[280px]">
-              <Button variant="outline" class="justify-between">
+              <Button class="justify-between" variant="outline">
                 {{ lang?.label ?? 'Select language' }}
 
                 <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -465,47 +490,69 @@ async function ollamaSummarize(): Promise<void> {
 
         <ScrollArea class="h-[200px] rounded-md border p-4 mt-2">
           <vue-markdown
-            :source="summary"
             :plugins="plugins"
+            :source="summary"
             class="text-sm/7 whitespace-pre-wrap"
           />
         </ScrollArea>
         <br />
       </div>
-      <div class="flex items-center space-x-1 w-[280px] cursor-pointer">
-        <Badge variant="secondary" @click="prompt = 'Summarize this transcript.'">
-          Summarize
-        </Badge>
-        <Badge
-          variant="secondary"
-          @click="prompt = 'Extract all questions asked in this transcript.'"
-        >
-          Extract questions
-        </Badge>
-        <Badge
-          variant="secondary"
-          @click="
-            prompt = 'Extract questions Identify and highlight the key points in this transcript.'
-          "
-        >
-          Highlight Key points
-        </Badge>
-      </div>
+
       <br />
+
       <div class="grid w-full gap-2">
+        <Select v-model="selectedOllamaModel" @update:open="getRunningModelsAndSaveInRef">
+          <SelectTrigger class="w-[280px]">
+            <SelectValue placeholder="Select a model" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="model in downloadedModels" :key="model.name" :value="model.name">
+              {{ model.name }}
+              <span
+                :class="[
+                  isModelOnline(model.name)
+                    ? 'bg-green-400 forced-colors:bg-[Highlight]'
+                    : 'bg-gray-200 dark:bg-white/25',
+                  'inline-block size-2 shrink-0 rounded-full border border-transparent'
+                ]"
+                aria-hidden="true"
+              />
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <div class="flex items-center space-x-1 w-[280px] cursor-pointer">
+          <Badge variant="secondary" @click="prompt = 'Summarize this transcript.'">
+            Summarize
+          </Badge>
+          <Badge
+            variant="secondary"
+            @click="prompt = 'Extract all questions asked in this transcript.'"
+          >
+            Extract questions
+          </Badge>
+          <Badge
+            variant="secondary"
+            @click="
+              prompt = 'Extract questions Identify and highlight the key points in this transcript.'
+            "
+          >
+            Highlight Key points
+          </Badge>
+        </div>
+
         <Textarea
           v-model="prompt"
+          class="min-h-[120px]"
           :disabled="isOllamaSummarize"
           placeholder="Chat with your transcript."
           @keydown.enter.exact.prevent="ollamaSummarize()"
         />
+
         <Button :disabled="isOllamaSummarize" @click="ollamaSummarize"><Brain></Brain>Enter</Button>
       </div>
     </div>
   </section>
   <br />
-  <!--  v-if="youTubeUrl.trim() && isValidYouTubeUrl" @click="downloadAudio"-->
-  <div class="fixed bottom-1 right-0 left-0"></div>
 </template>
 
 <style scoped></style>
