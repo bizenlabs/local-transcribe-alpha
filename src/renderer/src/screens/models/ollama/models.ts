@@ -155,5 +155,39 @@ export const modelsData: Model[] = [
       input: 'Text',
       isDefault: true
     }
+  },
+  {
+    id: 7,
+    name: 'Hinglish translator',
+    description: 'Hinglish translator.',
+    showVariants: false,
+    defaultVariant: {
+      name: 'hf.co/mradermacher/RLM-hinglish-translator-GGUF:Q8_0',
+      size: '4.4GB',
+      context: '32K',
+      input: 'Text',
+      isDefault: true
+    }
+  },
+  {
+    id: 8,
+    name: 'BharatGPT',
+    description: 'BharatGPT',
+    showVariants: false,
+    defaultVariant: {
+      name: 'hf.co/mradermacher/BharatGPT-3B-Indic-GGUF:Q8_0',
+      size: '2.8B',
+      context: '32K',
+      input: 'Text',
+      isDefault: true
+    },
+    variants: [
+      {
+        name: 'hf.co/mradermacher/BharatGPT-3B-Indic-GGUF:Q4_K_M',
+        size: '2.1GB',
+        context: '',
+        input: 'Text'
+      }
+    ]
   }
 ]
