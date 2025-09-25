@@ -32,6 +32,8 @@ declare global {
       onJDKDownloadProgress: (callback: (percentage: string) => void) => void
     },
     download: {
+      whisper: () => Promise<DownloaderReport>
+      whisperProgress: (callback: (percentage: string) => void) => void,
       ollama: () => Promise<DownloaderReport>
       ollamaProgress: (callback: (percentage: string) => void) => void,
       jdk: () => Promise<DownloaderReport>
@@ -40,6 +42,7 @@ declare global {
     server: {
       startBackend: () => Promise<void>
       startOllama: () => Promise<void>
+      startWhisper: () => Promise<void>
     }
   }
 }

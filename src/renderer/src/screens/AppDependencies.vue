@@ -17,33 +17,23 @@ import router from '@/router'
 const steps = [
   {
     step: 1,
-    title: 'Setting core system',
-    description: 'How about a coffee!'
-  },
-  {
-    step: 2,
     title: 'Setting Transcriber',
     description: 'Transcribe audio'
   },
   {
-    step: 3,
+    step: 2,
     title: 'Youtube',
     description: 'Transcribe Youtube videos'
   },
   {
-    step: 4,
+    step: 3,
     title: 'Local LLM ',
     description: 'Your Data, Your Control!'
-  },
-  {
-    step: 5,
-    title: 'Start Server',
-    description: 'These labels will be changed!'
   }
 ]
 
+const whisperProgress = ref<number>(0)
 const ollamaProgress = ref<number>(0)
-const jdkProgress = ref<number>(0)
 const currentStep = ref<number>(1)
 
 onMounted(async () => {
@@ -51,58 +41,29 @@ onMounted(async () => {
 })
 
 async function setup(): Promise<void> {
-  await updateJDKDownloadProgress()
-  await downloadJDK()
   await updateWhisperDownloadProgress()
   await downloadWhisper()
+  await startWhisperServer()
   await updateYtDLPDownloadProgress()
   await downloadYtDLP()
   await updateOllamaDownloadProgress()
   await downloadOllama()
   await startOllamaServer()
-  await startAPIServer()
-  console.log('startAPIServer')
   loadHomePage()
 }
 
-async function updateJDKDownloadProgress(): Promise<void> {
-  window.download.jdkProgress((percentage: string) => {
-    jdkProgress.value = +percentage
-  })
-}
-async function downloadJDK(): Promise<void> {
-  jdkProgress.value = 0
-  await window.download.jdk()
-  currentStep.value += 1
-  console.log('JDK download complete')
-}
-
 async function updateWhisperDownloadProgress(): Promise<void> {
-  // window.download.jdkProgress((percentage: string) => {
-  //   jdkProgress.value = +percentage
-  // })
+  window.download.whisperProgress((percentage: string) => {
+    whisperProgress.value = +percentage
+  })
 }
 async function downloadWhisper(): Promise<void> {
   currentStep.value += 1
-  // jdkProgress.value = 0
-  // window.download.jdk().then(() => {
-  //   currentStep.value += 1
-  //   console.log('JDK download complete')
-  // })
-}
-
-async function updateYtDLPDownloadProgress(): Promise<void> {
-  // window.download.ollamaProgress((percentage: string) => {
-  //   ollamaProgress.value = +percentage
-  // })
-}
-async function downloadYtDLP(): Promise<void> {
-  currentStep.value += 1
-  // ollamaProgress.value = 0
-  // window.download.ollama().then(() => {
-  //   currentStep.value += 1
-  //   console.log('Ollama download complete')
-  // })
+  whisperProgress.value = 0
+  window.download.whisper().then(() => {
+    currentStep.value += 1
+    console.log('Whisper download complete')
+  })
 }
 
 async function updateOllamaDownloadProgress(): Promise<void> {
@@ -121,11 +82,27 @@ async function startOllamaServer(): Promise<void> {
     console.log('Ollama Started!')
   })
 }
-async function startAPIServer(): Promise<void> {
-  await window.server.startBackend().then(() => {
-    console.log('Server Started!')
+async function startWhisperServer(): Promise<void> {
+  await window.server.startWhisper().then(() => {
+    console.log('Whisper Started!')
   })
 }
+
+async function updateYtDLPDownloadProgress(): Promise<void> {
+  // window.download.ollamaProgress((percentage: string) => {
+  //   ollamaProgress.value = +percentage
+  // })
+}
+async function downloadYtDLP(): Promise<void> {
+  currentStep.value += 1
+  // ollamaProgress.value = 0
+  // window.download.ollama().then(() => {
+  //   currentStep.value += 1
+  //   console.log('Ollama download complete')
+  // })
+}
+
+
 
 function loadHomePage(): void {
   router.push('/audio-file-transcribe')

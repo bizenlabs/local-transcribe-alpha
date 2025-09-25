@@ -318,6 +318,9 @@ async function ollamaSummarize(): Promise<void> {
           Invalid URL.
         </AlertDescription>
       </div>
+      <div class="text-center mx-10">
+        <Button>Realtime</Button>
+      </div>
     </div>
   </div>
 

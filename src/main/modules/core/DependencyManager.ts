@@ -4,6 +4,8 @@ import { downloadFile } from '../../utils/fileDownloader'
 import fs from 'node:fs'
 
 import decompress from 'decompress'
+import { modelsData } from '../../asr/models'
+import { modelService } from '../../asr/model.service'
 
 export interface Dependency {
   name: string
@@ -17,62 +19,37 @@ const appDataDir = app.getPath('userData')
 // private readonly modelsDirectoryPath: string = resolve(app.getPath('userData'), 'models')
 
 const ollamaDest = path.join(appDataDir, 'bin', 'ollama')
-const jdkDest = path.join(appDataDir, 'bin', 'jdk')
+const whisperDest = path.join(appDataDir, 'bin', 'whisper')
 const mac_arm_dependencies: Dependency[] = [
+  {
+    name: 'whisper',
+    url: 'https://github.com/bizenlabs/binaries/releases/download/v1.0.0/whisper-server.zip',
+    fileName: 'whisper-server.zip',
+    destination: whisperDest,
+    binPath: path.join(appDataDir, 'bin', 'whisper', 'whisper-server')
+  },
   {
     name: 'ollama',
     url: 'https://github.com/ollama/ollama/releases/download/v0.11.10/ollama-darwin.tgz',
     fileName: 'ollama-darwin.tgz',
     destination: ollamaDest,
     binPath: path.join(appDataDir, 'bin', 'ollama', 'ollama')
-  },
-  {
-    name: 'jdk',
-    url: 'https://download.oracle.com/java/21/latest/jdk-21_macos-aarch64_bin.tar.gz',
-    fileName: 'jdk-21_macos-aarch64_bin.tar.gz',
-    destination: jdkDest,
-    binPath: path.join(
-      appDataDir,
-      'bin',
-      'jdk',
-      'jdk-21.0.8.jdk',
-      'Contents',
-      'Home',
-      'bin',
-      'java'
-    )
   }
 ]
 const windows_x64_dependencies: Dependency[] = [
+  {
+    name: 'whisper',
+    url: 'https://github.com/ggml-org/whisper.cpp/releases/download/v1.7.6/whisper-bin-x64.zip',
+    fileName: 'whisper-bin-x64.zip',
+    destination: ollamaDest,
+    binPath: path.join(appDataDir, 'bin', 'whisper', 'whisper-server.exe')
+  },
   {
     name: 'ollama',
     url: 'https://github.com/ollama/ollama/releases/download/v0.11.10/ollama-windows-amd64.zip',
     fileName: 'ollama-windows-amd64.zip',
     destination: ollamaDest,
     binPath: path.join(appDataDir, 'bin', 'ollama', 'ollama.exe')
-  },
-  {
-    name: 'jdk',
-    url: 'https://download.oracle.com/java/21/latest/jdk-21_windows-x64_bin.zip',
-    fileName: 'jdk-21_windows-x64_bin.zip',
-    destination: jdkDest,
-    binPath: path.join(appDataDir, 'bin', 'jdk', 'jdk-21.0.8', 'bin', 'java')
-  }
-]
-const linux_x64_dependencies: Dependency[] = [
-  {
-    name: 'ollama',
-    url: 'https://github.com/ollama/ollama/releases/download/v0.11.10/ollama-linux-amd64.tgz',
-    fileName: 'ollama-linux-amd64.tgz',
-    destination: ollamaDest,
-    binPath: path.join(appDataDir, 'bin', 'ollama', 'bin', 'ollama')
-  },
-  {
-    name: 'jdk',
-    url: 'https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz',
-    fileName: 'jdk-21_linux-x64_bin.tar.gz',
-    destination: jdkDest,
-    binPath: ''
   }
 ]
 
@@ -89,10 +66,41 @@ export class DependencyManager {
     )
   }
 
+  public getWhisperPath(): string {
+    return <string>(
+      this.resolveDependencies().find((dependency) => dependency.name === 'whisper')?.binPath
+    )
+  }
+
   public getOllamaPath(): string {
     return <string>(
       this.resolveDependencies().find((dependency) => dependency.name === 'ollama')?.binPath
     )
+  }
+
+  public async downloadDefaultModel(): Promise<void> {
+    const onProgress = (percentage: string): void => console.log('default progress', percentage)
+    await modelService.downloadModel(modelsData[0], onProgress)
+    console.log('Downloaded default model...')
+  }
+
+  public async checkAndDownloadWhisper(onProgress: (percentage: string) => void): Promise<void> {
+    await this.downloadDefaultModel()
+    const whisper = this.resolveDependencies().find((dependency) => dependency.name === 'whisper')
+    if (!whisper) {
+      throw new Error('whisper Dependency not found for ' + process.platform + ' ' + process.arch)
+    }
+    const fullPath: string = path.join(whisper.destination, whisper.fileName)
+    if (this.checkIfFileExists(fullPath)) {
+      console.log('Files Exists')
+      return
+    }
+    await downloadFile(whisper.url, whisper.destination, onProgress)
+    console.log('downloadFile')
+    await decompress(fullPath, whisper.destination).then((files) => {
+      console.log('done!', files.length)
+    })
+    console.log('fullPath', fullPath)
   }
 
   public async checkAndDownloadOllama(onProgress: (percentage: string) => void): Promise<void> {
@@ -135,14 +143,12 @@ export class DependencyManager {
     console.log('fullPath', fullPath)
   }
 
-  //TODO add mac x86 support
+  //TODO add mac x86 & Windows GPU support
   private resolveDependencies(): Dependency[] {
     if (process.platform == 'darwin' && process.arch === 'arm64') {
       return mac_arm_dependencies
     } else if (process.platform == 'win32' && process.arch === 'x64') {
       return windows_x64_dependencies
-    } else if (process.platform == 'linux' && process.arch === 'x64') {
-      return linux_x64_dependencies
     }
     return []
   }

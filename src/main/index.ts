@@ -12,6 +12,9 @@ import { startServer } from './utils/ollama'
 import { dependencyManager } from './modules/core/DependencyManager'
 import Server from './server/server'
 
+// import kill from 'tree-kill'
+import { startWhisperServer } from './utils/whisperServer'
+
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
   return autoUpdater
@@ -102,7 +105,12 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+
 })
+
+// function killPython() {
+//   kill(python.pid);
+// }
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
@@ -124,6 +132,7 @@ function registerIPC(): void {
   ipcMain.handle('asr:startServer', async (_event, ...args) => {
     console.log('asr:startServer', _event, ...args)
     // return await modelService.summary(args[0])
+    await startWhisperServer()
     return await startServer()
     // return await new Saransh().summary(args[0], args[1])
     // return await summarizer.summary(args[0])
@@ -161,6 +170,13 @@ function registerIPC(): void {
     return await downloadYT(args[0], onProgress)
   })
 
+  ipcMain.handle('download:whisper', async (event) => {
+    const onProgress = function (percentage: string): void {
+      event.sender.send('whisperProgress', percentage)
+    }
+    return await dependencyManager.checkAndDownloadWhisper(onProgress)
+  })
+
   ipcMain.handle('download:ollama', async (event) => {
     const onProgress = function (percentage: string): void {
       event.sender.send('ollamaProgress', percentage)
@@ -172,14 +188,20 @@ function registerIPC(): void {
     const onProgress = function (percentage: string): void {
       event.sender.send('jdkProgress', percentage)
     }
-    return await dependencyManager.checkAndDownloadJDK(onProgress)
+    return await dependencyManager.checkAndDownloadWhisper(onProgress)
   })
 
   ipcMain.handle('server:start:backend', async () => {
     return await new Server().startAPIServer().then(() => console.log('Backend started'))
   })
 
+  ipcMain.handle('server:start:whisper', async () => {
+    await startWhisperServer()
+    return await new Server().startWhisperServer().then(() => console.log('Whisper started'))
+  })
+
   ipcMain.handle('server:start:ollama', async () => {
+    await startWhisperServer()
     return await new Server().startOllamaServer().then(() => console.log('Backend started'))
   })
 }

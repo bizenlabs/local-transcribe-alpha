@@ -11,6 +11,10 @@ const api = {
 }
 
 const download = {
+  whisper: async (): Promise<DownloaderReport> => await ipcRenderer.invoke('download:whisper'),
+  whisperProgress: (callback: (percentage: string) => void) =>
+    ipcRenderer.on('whisperProgress', (_event, value) => callback(value)),
+
   ollama: async (): Promise<DownloaderReport> => await ipcRenderer.invoke('download:ollama'),
   ollamaProgress: (callback: (percentage: string) => void) =>
     ipcRenderer.on('ollamaProgress', (_event, value) => callback(value)),
@@ -21,7 +25,7 @@ const download = {
 }
 
 const server = {
-  startBackend: async () => await ipcRenderer.invoke('server:start:backend'),
+  startWhisper: async () => await ipcRenderer.invoke('server:start:whisper'),
   startOllama: async () => await ipcRenderer.invoke('server:start:ollama')
 }
 
