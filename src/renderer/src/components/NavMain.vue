@@ -4,7 +4,6 @@ import { ChevronRight } from 'lucide-vue-next'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -29,7 +28,6 @@ defineProps<{
 
 <template>
   <SidebarGroup>
-    <SidebarGroupLabel>Platform</SidebarGroupLabel>
     <SidebarMenu>
       <Collapsible
         v-for="item in items"
@@ -55,9 +53,6 @@ defineProps<{
                   <RouterLink :to="subItem.url">
                     <span>{{ subItem.title }}</span>
                   </RouterLink>
-                  <!--                  <a :href="subItem.url">-->
-                  <!--                    <span>{{ subItem.title }}</span>-->
-                  <!--                  </a>-->
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             </SidebarMenuSub>

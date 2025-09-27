@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { Separator } from '@/components/ui/separator'
 import {
-  AlertCircle,
   AudioLines,
   Brain,
   Check,
@@ -48,9 +47,9 @@ import MarkdownItAnchor from 'markdown-it-anchor'
 import { Input } from '@/components/ui/input'
 import { AlertDescription } from '@/components/ui/alert'
 import { VideoProgress } from 'ytdlp-nodejs'
-import ollama from 'ollama/browser'
-
-import { ModelResponse } from 'ollama/browser'
+import ollama, { ModelResponse } from 'ollama/browser'
+import { isValidHttpUrl } from '@/utils/urlValidator'
+import ModelNotDownloaded from '@/screens/transcription/ModelNotDownloaded.vue'
 
 const downloadedModels = ref<ModelResponse[]>([])
 const runningModels = ref<ModelResponse[]>([])
@@ -187,34 +186,11 @@ async function transcribeFileWhisper(): Promise<void> {
   }
 }
 
-// async function startLLMServer(): Promise<void> {
-//   let model = models.value.find((model) => model.id === selectedLLMModel.value)
-//   if (model && model.downloadPath) {
-//     await window.asr.summarize('', model.downloadPath)
-//   }
-// }
-
-// async function startOllamaServer(): Promise<void> {
-//   await window.asr.startServer('', 'model?.downloadPath')
-// }
-
-function isValidHttpUrl(urlToValidate: string): boolean {
-  let url
-
-  try {
-    url = new URL(urlToValidate)
-  } catch (_) {
-    console.error(_)
-    return false
-  }
-
-  return url.protocol === 'https:'
-}
 async function validateURL(url: string): Promise<void> {
   console.log(url)
   isValidYouTubeUrl.value = isValidHttpUrl(youTubeUrl.value)
 }
-async function downloadAudio(): Promise<void> {
+async function downloadYouTubeVideo(): Promise<void> {
   isValidYouTubeUrl.value = isValidHttpUrl(youTubeUrl.value)
   if (!isValidYouTubeUrl.value) {
     return
@@ -266,24 +242,7 @@ async function ollamaSummarize(): Promise<void> {
   <Separator orientation="horizontal" />
 
   <div class="col-span-full">
-    <!--Model not downloaded    -->
-    <div
-      v-if="!isModelAvailable"
-      id="no-model-downloaded"
-      class="rounded-md bg-yellow-50 p-4 dark:bg-yellow-500/10 dark:outline dark:outline-yellow-500/15"
-    >
-      <div class="flex">
-        <div class="shrink-0">
-          <AlertCircle aria-hidden="true" class="size-5 text-yellow-400 dark:text-yellow-300" />
-        </div>
-        <div class="ml-3">
-          <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-100">Download Model</h3>
-          <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-100/80">
-            <p>Please download a model to start transcription.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <ModelNotDownloaded v-if="!isModelAvailable" />
 
     <!--File not selected    -->
     <div
@@ -293,33 +252,32 @@ async function ollamaSummarize(): Promise<void> {
       <div class="text-center">
         <span @click="selectFile">
           <FolderPlus class="mx-auto size-9 text-gray-300" />
-          <p class="mt-1 font-semibold text-gray-900">Select File</p>
-          <p class="text-xs/5 text-gray-600">mp3, wav up to X? MB</p>
+          <strong class="mt-1 font-semibold text-gray-900">Select File</strong>
+          <br />
+          <strong class="text-xs/5 text-gray-600">mp3, wav up to X? MB</strong>
         </span>
       </div>
 
-      <div class="text-center mx-10">
+      <div class="text-center mx-1">
         <span>
           <TvMinimalPlay class="mx-auto size-9 text-gray-300"></TvMinimalPlay>
-          <p class="mt-1 font-semibold text-gray-900">YouTube</p>
+          <strong class="mt-1 font-semibold text-gray-900">YouTube</strong>
         </span>
         <Input
           v-model="youTubeUrl"
+          class="w-full h-9"
           placeholder="https://www.youtube.com/watch?v=se0nIBJjVfI"
           type="url"
           @input="validateURL"
         />
         <Progress v-if="isDownloadInProgress" v-model="downloadPercentage" />
         <br />
-        <Button v-if="youTubeUrl.trim() && isValidYouTubeUrl" @click="downloadAudio">
+        <Button v-if="youTubeUrl.trim() && isValidYouTubeUrl" @click="downloadYouTubeVideo">
           <FileDown></FileDown> Download
         </Button>
         <AlertDescription v-if="youTubeUrl.trim() && !isValidYouTubeUrl" class="text-red-600">
           Invalid URL.
         </AlertDescription>
-      </div>
-      <div class="text-center mx-10">
-        <Button>Realtime</Button>
       </div>
     </div>
   </div>
@@ -411,52 +369,6 @@ async function ollamaSummarize(): Promise<void> {
           </ComboboxList>
         </Combobox>
         <br />
-        <!--        <Collapsible v-model:open="isOpen" class="w-[300px]">-->
-        <!--          <div class="flex items-center justify-between space-x-4 px-3">-->
-        <!--            &lt;!&ndash;          <h3 class="text-sm font-bold">Advanced Options</h3>&ndash;&gt;-->
-        <!--            <Label>Advanced Options</Label>-->
-        <!--            <CollapsibleTrigger as-child>-->
-        <!--              <Button variant="ghost" size="sm" class="w-9 p-0">-->
-        <!--                &lt;!&ndash;              <ChevronsUpDown class="h-4 w-4" />&ndash;&gt;-->
-        <!--                <ChevronsDown v-if="!isOpen" />-->
-        <!--                <ChevronsUp v-if="isOpen" />-->
-        <!--                <span class="sr-only">Toggle</span>-->
-        <!--              </Button>-->
-        <!--            </CollapsibleTrigger>-->
-        <!--          </div>-->
-        <!--          <CollapsibleContent>-->
-        <!--            <div class="flex items-center space-x-2">-->
-        <!--              <Switch id="use-gpu" v-model="useGPU" />-->
-        <!--              <Label for="use-gpu">Use GPU</Label>-->
-        <!--            </div>-->
-        <!--            <div class="flex items-center space-x-2 w-[280px]">-->
-        <!--              <Label class="m-2 text-s" for="number-threads">Number of Threads</Label>-->
-        <!--              <p>{{ numberOfThreads ? numberOfThreads[0] : '' }}</p>-->
-        <!--              <Slider-->
-        <!--                id="number-threads"-->
-        <!--                :value="numberOfThreads"-->
-        <!--                :default-value="[8]"-->
-        <!--                :max="50"-->
-        <!--                :min="1"-->
-        <!--                :step="1"-->
-        <!--                @update:model-value="(value) => (numberOfThreads = value)"-->
-        <!--              />-->
-        <!--            </div>-->
-        <!--            <div class="flex items-center space-x-2 w-[280px]">-->
-        <!--              <Label class="m-2 text-s" for="number-threads">Number of Processors</Label>-->
-        <!--              <p>{{ numberOfProcessors ? numberOfProcessors[0] : '' }}</p>-->
-        <!--              <Slider-->
-        <!--                id="number-threads"-->
-        <!--                :value="numberOfProcessors"-->
-        <!--                :default-value="[8]"-->
-        <!--                :max="16"-->
-        <!--                :min="1"-->
-        <!--                :step="1"-->
-        <!--                @update:model-value="(value) => (numberOfProcessors = value)"-->
-        <!--              />-->
-        <!--            </div>-->
-        <!--          </CollapsibleContent>-->
-        <!--        </Collapsible>-->
       </div>
     </div>
     <br />
@@ -557,5 +469,3 @@ async function ollamaSummarize(): Promise<void> {
   </section>
   <br />
 </template>
-
-<style scoped></style>

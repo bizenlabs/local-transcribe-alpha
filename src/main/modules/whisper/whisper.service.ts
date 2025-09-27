@@ -1,29 +1,19 @@
-import { app } from 'electron'
-import path, { resolve } from 'path'
+import path, { join } from 'path'
 
 import storage from 'electron-json-storage'
 
-import { modelsData as appModelList } from './models'
-import type { Model } from '../../types/model'
+import { modelsData } from './models'
+import type { Model } from '../../../types/model'
 
-// import {
-//   AutoProcessor,
-//   AutoTokenizer,
-//   full,
-//   pipeline,
-//   PreTrainedModel,
-//   PreTrainedTokenizer,
-//   Processor,
-//   WhisperForConditionalGeneration
-// } from '@huggingface/transformers'
-
-import { convertToWavType } from '../utils/fileConverter'
+import { convertToWavType } from '../../utils/fileConverter'
 import { createRequire } from 'node:module'
 import { promisify } from 'node:util'
-import { downloadFile } from '../utils/fileDownloader'
+import { downloadFile } from '../../utils/fileDownloader'
 import { DownloaderReport } from 'nodejs-file-downloader'
-import { WhisperParams } from '../../types/whisperParameters'
-// import { snapshotDownload } from '@huggingface/hub'
+import { WhisperParams } from '../../../types/whisperParameters'
+import { app } from 'electron'
+import { exec } from 'node:child_process'
+import { dependencyManager } from '../core/DependencyManager'
 
 let binPath: string
 if (process.platform == 'darwin') {
@@ -36,50 +26,60 @@ if (process.platform == 'darwin') {
     .replace('app.asar', 'app.asar.unpacked')
 }
 
-class ModelService {
-  private static _instance: ModelService
-  private readonly modelsDirectoryPath: string = resolve(app.getPath('userData'), 'models')
-  private static models: Model[] = []
+class WhisperService {
+  private static _instance: WhisperService
 
-  // static tokenizer: PreTrainedTokenizer
-  // static processor: Processor
-  // static model: PreTrainedModel
-  static processing: boolean = false
-  MAX_NEW_TOKENS = 64
+  private readonly appDataDir = app.getPath('userData')
+  private readonly modelsDirectoryPath: string = join(this.appDataDir, 'models')
+
+  private models: Model[] = []
+
+  private controller: AbortController
 
   private constructor() {
-    console.log('ModelService constructor')
-    storage.setDataPath(this.modelsDirectoryPath)
-    storage.has('models', function (_error: never, hasKey: boolean) {
-      if (!hasKey) {
-        storage.set('models', appModelList)
-        ModelService.models = appModelList
-      } else {
-        const storageModels: Model[] = storage.getSync('models')
-        storageModels.forEach((storeModel: Model) => {
-          const index = appModelList.findIndex((model) => {
-            return model.name === storeModel.name && storeModel.downloadPath != ''
-          })
-          if (index !== -1) {
-            console.log('Model found Index', index)
-            appModelList[index].downloadPath = storeModel.downloadPath
-          }
-        })
-        storage.set('models', appModelList)
-        ModelService.models = storage.getSync('models')
-      }
-    })
+    this.syncSupportedModelsInStore()
+    this.models = storage.getSync('models')
+    this.controller = new AbortController()
   }
+
+  async getAvailableModels(): Promise<Model[]> {
+    return Promise.resolve(this.models)
+  }
+
+  public async downloadDefaultModel(): Promise<void> {
+    console.log('Downloaded default model...')
+  }
+
+  async startWhisperServer(model?: Model, port = 8090): Promise<void> {
+    console.log('startWhisperServer')
+    if (!model) {
+      model = this.models[0]
+    }
+    if (!model.downloadPath) {
+      await modelService.downloadModel(model)
+    }
+
+    this.controller = new AbortController()
+    const { signal } = this.controller
+
+    const command = `"${dependencyManager.getWhisperPath()}"  --model "${model.downloadPath}" --port ${port}`
+    console.log('startWhisperServer command...', command)
+
+    exec(command, { signal })
+    console.log('WhisperServer Started @ port: ', port)
+  }
+
+  async stopWhisperServer(): Promise<void> {
+    this.controller.abort()
+    console.log('WhisperServer Stopped')
+  }
+
   async downloadModel(
     model: Model,
-    onProgress: (percentage: string) => void
+    onProgress?: (percentage: string) => void
   ): Promise<DownloaderReport> {
     console.log('Download model:', model)
-    const downloadReport = await downloadFile(
-      model.url,
-      this.getModelsDirectoryPath(),
-      onProgress
-    )
+    const downloadReport = await downloadFile(model.url, this.getModelsDirectoryPath(), onProgress)
 
     if (downloadReport && downloadReport.filePath) {
       const modelsInStore: Model[] = storage.getSync('models')
@@ -90,7 +90,7 @@ class ModelService {
       if (index !== -1) {
         modelsInStore[index].downloadPath = downloadReport.filePath
         storage.set('models', modelsInStore)
-        ModelService.models = modelsInStore
+        this.models = modelsInStore
       }
     }
     return downloadReport
@@ -136,15 +136,11 @@ class ModelService {
     return Promise.resolve(result.transcription)
   }
 
-  public static get Instance(): ModelService {
+  public static get Instance(): WhisperService {
     return this._instance || (this._instance = new this())
   }
 
   //TODO : unloadModel
-
-  async getModels(): Promise<Model[]> {
-    return Promise.resolve(ModelService.models)
-  }
 
   async getDownloadedModels(): Promise<Model[]> {
     const modelsInStore: Model[] = storage.getSync('models')
@@ -154,6 +150,27 @@ class ModelService {
   getModelsDirectoryPath(): string {
     return this.modelsDirectoryPath
   }
+
+  private syncSupportedModelsInStore(): void {
+    const appModelList = [...modelsData]
+    storage.setDataPath(this.modelsDirectoryPath)
+
+    storage.has('models', function (_error: never, hasKey: boolean) {
+      if (!hasKey) {
+        storage.set('models', appModelList)
+      } else {
+        const storageModels: Model[] = storage.getSync('models')
+
+        appModelList.forEach(function (model: Model) {
+          const index = storageModels.findIndex((storedModel) => storedModel.name === model.name)
+          if (index > -1) {
+            model.downloadPath = storageModels[index].downloadPath
+          }
+        })
+      }
+      storage.set('models', appModelList)
+    })
+  }
 }
 
-export const modelService = ModelService.Instance
+export const modelService = WhisperService.Instance

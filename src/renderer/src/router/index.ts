@@ -6,6 +6,7 @@ import File from '@/screens/transcription/File.vue'
 import General from '@/screens/settings/General.vue'
 import OllamaModels from '@/screens/models/ollama/OllamaModels.vue'
 import AppDependencies from '@/screens/AppDependencies.vue'
+import { store } from '@/lib/store'
 
 const routes = [
   { path: '/', redirect: '/dependency-manager' },
@@ -21,5 +22,7 @@ const router = createRouter({
   history: createMemoryHistory(),
   routes
 })
-
+router.beforeResolve(() => {
+  return store.isDependenciesReady
+})
 export default router

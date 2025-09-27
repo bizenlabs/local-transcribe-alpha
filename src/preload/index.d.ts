@@ -8,7 +8,18 @@ import { VideoProgress } from "ytdlp-nodejs";
 
 declare global {
   interface Window {
-    electron: ElectronAPI
+    download: {
+      whisper: () => Promise<DownloaderReport>
+      whisperProgress: (callback: (percentage: string) => void) => void,
+
+      ollama: () => Promise<DownloaderReport>
+      ollamaProgress: (callback: (percentage: string) => void) => void
+    },
+    server: {
+      startWhisper: () => Promise<void>
+      startOllama: () => Promise<void>
+      startBackend: () => Promise<void>
+    },
     api: {
       openFile: () => Promise<string>
     }
@@ -31,18 +42,7 @@ declare global {
       downloadJDK: () => Promise<DownloaderReport>
       onJDKDownloadProgress: (callback: (percentage: string) => void) => void
     },
-    download: {
-      whisper: () => Promise<DownloaderReport>
-      whisperProgress: (callback: (percentage: string) => void) => void,
-      ollama: () => Promise<DownloaderReport>
-      ollamaProgress: (callback: (percentage: string) => void) => void,
-      jdk: () => Promise<DownloaderReport>
-      jdkProgress: (callback: (percentage: string) => void) => void,
-    },
-    server: {
-      startBackend: () => Promise<void>
-      startOllama: () => Promise<void>
-      startWhisper: () => Promise<void>
-    }
+
+    electron: ElectronAPI
   }
 }

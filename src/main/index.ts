@@ -3,17 +3,16 @@ import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import electronUpdater, { type AppUpdater, UpdateCheckResult } from 'electron-updater'
-import { modelService } from './asr/model.service'
-import Saransh from './summary/summarize'
+import { modelService } from './modules/whisper/whisper.service'
 import { downloadYT } from './utils/youTube'
 import { VideoProgress } from 'ytdlp-nodejs'
-import { startServer } from './utils/ollama'
 
 import { dependencyManager } from './modules/core/DependencyManager'
 import Server from './server/server'
 
 // import kill from 'tree-kill'
-import { startWhisperServer } from './utils/whisperServer'
+
+import startBackend from './modules/server/api'
 
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
@@ -32,6 +31,7 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
       nodeIntegration: false,
+      nodeIntegrationInWorker: true,
       webSecurity: false
     }
   })
@@ -105,7 +105,6 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
-
 })
 
 // function killPython() {
@@ -116,24 +115,20 @@ app.on('window-all-closed', () => {
 // code. You can also put them in separate files and require them here.
 
 function registerIPC(): void {
+  registerDownloadIPC()
+  registerServerIPC()
+
   ipcMain.handle('asr:getModels', async () => {
     console.log('asr:getModels')
-    return modelService.getModels()
-  })
-
-  ipcMain.handle('asr:summarize', async (_event, ...args) => {
-    console.log('asr:summarize')
-    // return await modelService.summary(args[0])
-    return await new Saransh().summary(args[0], args[1])
-    // return await summarizer.summary(args[0])
-    // return await summarize(args[0])
+    return modelService.getAvailableModels()
   })
 
   ipcMain.handle('asr:startServer', async (_event, ...args) => {
     console.log('asr:startServer', _event, ...args)
     // return await modelService.summary(args[0])
-    await startWhisperServer()
-    return await startServer()
+    // await modelService.startWhisperServer()
+    // await modelService.stopWhisperServer()
+    // return await startServer()
     // return await new Saransh().summary(args[0], args[1])
     // return await summarizer.summary(args[0])
     // return await summarize(args[0])
@@ -170,6 +165,15 @@ function registerIPC(): void {
     return await downloadYT(args[0], onProgress)
   })
 
+  ipcMain.handle('download:jdk', async (event) => {
+    const onProgress = function (percentage: string): void {
+      event.sender.send('jdkProgress', percentage)
+    }
+    return await dependencyManager.checkAndDownloadWhisper(onProgress)
+  })
+}
+
+function registerDownloadIPC(): void {
   ipcMain.handle('download:whisper', async (event) => {
     const onProgress = function (percentage: string): void {
       event.sender.send('whisperProgress', percentage)
@@ -183,29 +187,23 @@ function registerIPC(): void {
     }
     return await dependencyManager.checkAndDownloadOllama(onProgress)
   })
+}
 
-  ipcMain.handle('download:jdk', async (event) => {
-    const onProgress = function (percentage: string): void {
-      event.sender.send('jdkProgress', percentage)
-    }
-    return await dependencyManager.checkAndDownloadWhisper(onProgress)
-  })
-
+function registerServerIPC(): void {
   ipcMain.handle('server:start:backend', async () => {
-    return await new Server().startAPIServer().then(() => console.log('Backend started'))
+    return await startBackend()
   })
 
   ipcMain.handle('server:start:whisper', async () => {
-    await startWhisperServer()
-    return await new Server().startWhisperServer().then(() => console.log('Whisper started'))
+    return await modelService.startWhisperServer()
   })
 
   ipcMain.handle('server:start:ollama', async () => {
-    await startWhisperServer()
+    // await startWhisperServer()
     return await new Server().startOllamaServer().then(() => console.log('Backend started'))
   })
 }
-
+//TODO only one dialog open
 async function handleFileOpen(): Promise<string> {
   console.log('Opening file...')
   const { canceled, filePaths } = await dialog.showOpenDialog({

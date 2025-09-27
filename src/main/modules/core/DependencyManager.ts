@@ -4,8 +4,8 @@ import { downloadFile } from '../../utils/fileDownloader'
 import fs from 'node:fs'
 
 import decompress from 'decompress'
-import { modelsData } from '../../asr/models'
-import { modelService } from '../../asr/model.service'
+import { modelsData } from '../whisper/models'
+import { modelService } from '../whisper/whisper.service'
 
 export interface Dependency {
   name: string
@@ -85,7 +85,7 @@ export class DependencyManager {
   }
 
   public async checkAndDownloadWhisper(onProgress: (percentage: string) => void): Promise<void> {
-    await this.downloadDefaultModel()
+    // await this.downloadDefaultModel()
     const whisper = this.resolveDependencies().find((dependency) => dependency.name === 'whisper')
     if (!whisper) {
       throw new Error('whisper Dependency not found for ' + process.platform + ' ' + process.arch)

@@ -30,16 +30,4 @@ export default class Server {
     })
     return Promise.resolve('text')
   }
-
-  public async startWhisperServer(): Promise<string> {
-    const command =
-      '"' +
-      dependencyManager.getWhisperPath() +
-      '"' +
-      ' --model "/Users/kgidwani/Library/Application Support/local-transcribe-alpha/models/UTF-8ggml-tiny.bin" '
-    exec(command, (error, stdout, stderr) => {
-      console.log(stdout, stderr, error)
-    })
-    return Promise.resolve('text')
-  }
 }

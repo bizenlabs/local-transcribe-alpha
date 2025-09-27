@@ -5,11 +5,6 @@ import type { Model } from '../types/model'
 import { WhisperParams } from '../types/whisperParameters'
 import { VideoProgress } from 'ytdlp-nodejs'
 
-// Custom APIs for renderer
-const api = {
-  openFile: () => ipcRenderer.invoke('dialog:openFile')
-}
-
 const download = {
   whisper: async (): Promise<DownloaderReport> => await ipcRenderer.invoke('download:whisper'),
   whisperProgress: (callback: (percentage: string) => void) =>
@@ -17,16 +12,17 @@ const download = {
 
   ollama: async (): Promise<DownloaderReport> => await ipcRenderer.invoke('download:ollama'),
   ollamaProgress: (callback: (percentage: string) => void) =>
-    ipcRenderer.on('ollamaProgress', (_event, value) => callback(value)),
-
-  jdk: async (): Promise<DownloaderReport> => await ipcRenderer.invoke('download:jdk'),
-  jdkProgress: (callback: (percentage: string) => void) =>
-    ipcRenderer.on('jdkProgress', (_event, value) => callback(value))
+    ipcRenderer.on('ollamaProgress', (_event, value) => callback(value))
 }
-
 const server = {
   startWhisper: async () => await ipcRenderer.invoke('server:start:whisper'),
-  startOllama: async () => await ipcRenderer.invoke('server:start:ollama')
+  startOllama: async () => await ipcRenderer.invoke('server:start:ollama'),
+  startBackend: async () => await ipcRenderer.invoke('server:start:backend')
+}
+
+// Custom APIs for renderer
+const api = {
+  openFile: () => ipcRenderer.invoke('dialog:openFile')
 }
 
 // ASR APIs for renderer

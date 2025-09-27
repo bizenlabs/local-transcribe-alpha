@@ -13,12 +13,13 @@ import {
 } from '@/components/ui/stepper'
 import { onMounted, ref } from 'vue'
 import router from '@/router'
+import { store } from '@/lib/store'
 
 const steps = [
   {
     step: 1,
-    title: 'Setting Transcriber',
-    description: 'Transcribe audio'
+    title: 'Transcriber',
+    description: 'Setting Transcriber'
   },
   {
     step: 2,
@@ -27,8 +28,13 @@ const steps = [
   },
   {
     step: 3,
-    title: 'Local LLM ',
+    title: 'Local AI ',
     description: 'Your Data, Your Control!'
+  },
+  {
+    step: 4,
+    title: 'Knitting things up! ',
+    description: 'Local Server'
   }
 ]
 
@@ -41,14 +47,20 @@ onMounted(async () => {
 })
 
 async function setup(): Promise<void> {
+  store.isDependenciesReady = false
   await updateWhisperDownloadProgress()
   await downloadWhisper()
   await startWhisperServer()
+
   await updateYtDLPDownloadProgress()
   await downloadYtDLP()
+
   await updateOllamaDownloadProgress()
   await downloadOllama()
   await startOllamaServer()
+
+  await startBackendServer()
+  store.isDependenciesReady = true
   loadHomePage()
 }
 
@@ -88,6 +100,12 @@ async function startWhisperServer(): Promise<void> {
   })
 }
 
+async function startBackendServer(): Promise<void> {
+  await window.server.startBackend().then(() => {
+    console.log('Backend Started!')
+  })
+}
+
 async function updateYtDLPDownloadProgress(): Promise<void> {
   // window.download.ollamaProgress((percentage: string) => {
   //   ollamaProgress.value = +percentage
@@ -101,8 +119,6 @@ async function downloadYtDLP(): Promise<void> {
   //   console.log('Ollama download complete')
   // })
 }
-
-
 
 function loadHomePage(): void {
   router.push('/audio-file-transcribe')

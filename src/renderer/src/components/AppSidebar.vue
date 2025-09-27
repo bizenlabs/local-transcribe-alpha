@@ -116,18 +116,6 @@ const data = {
           title: 'General',
           url: 'general-settings'
         }
-        // {
-        //   title: 'Team',
-        //   url: '#'
-        // },
-        // {
-        //   title: 'Billing',
-        //   url: '#'
-        // },
-        // {
-        //   title: 'Limits',
-        //   url: '#'
-        // }
       ]
     }
   ],
@@ -168,11 +156,6 @@ const data = {
                 <span class="truncate font-medium">Bizen Labs</span>
                 <span class="truncate text-xs">Local first</span>
               </div>
-
-              <!--              <div class="flex flex-col gap-0.5 leading-none">-->
-              <!--                <span class="font-semibold">Documentation</span>-->
-              <!--                <span class="">v1.0.0</span>-->
-              <!--              </div>-->
             </a>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -180,7 +163,6 @@ const data = {
     </SidebarHeader>
     <SidebarContent>
       <NavMain :items="data.navMain" />
-      <!--      <NavProjects :projects="data.projects" />-->
     </SidebarContent>
     <SidebarFooter>
       <NavUser :user="data.user" />
