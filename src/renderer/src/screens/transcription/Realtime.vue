@@ -20,11 +20,13 @@ import { RawAxiosRequestHeaders } from 'axios'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 const isModelAvailable = ref<boolean>(false)
+const isModelLoading = ref<boolean>(false)
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
 const isTranscribing = ref<boolean>(false)
 
 const chunks = ref<Blob[]>([])
+// const bigBlob = ref<Blob>(new Blob())
 // const encoder = ref<Encoder>()
 // const listener = ref<Harker>()
 const recorder = ref<RecordRTCPromisesHandler>()
@@ -122,6 +124,16 @@ const onTranscribing = async (): Promise<void> => {
   }
 }
 
+async function onSelectedModelChanged(): Promise<void> {
+  isModelLoading.value = true
+  let model = models.value.find((t) => t.id === selectedModel.value)
+  if (model) {
+    await window.asr.loadModel({ ...model })
+  }
+  await getModelList()
+  isModelLoading.value = false
+}
+
 async function whisperTranscribe(file: File): Promise<string> {
   let whisperConfig = {
     model: 'whisper-1',
@@ -173,31 +185,49 @@ const onStopStreaming = (): void => {
   }
 }
 
-function onDataAvailable(blob: Blob): void {
-  console.log('onDataAvailable', blob)
+async function onDataAvailable(blob: Blob): Promise<void> {
+  console.log('onDataAvailable', blob.type)
+  // chunks.value.push(blob)
+  // // chunks.value.console.log('number of chunks', chunks.value.length)
+  // let combinedBlob = new Blob([bigBlob.value, blob])
+  // console.log('combinedBlob', combinedBlob.size)
+  // console.log('blob', blob.size)
+  // console.log('bigBlob before', bigBlob.value.size)
+  // bigBlob.value = combinedBlob
+  // console.log('bigBlob after', bigBlob.value.size)
+  // const file = new File([combinedBlob], 'segment.wav', { type: 'audio/wav' })
+  // // const file = new File([combinedBlob], 'segment.mp3', { type: 'audio/mpeg' })
+  // console.log('file', file.size)
+  // const text = await whisperTranscribe(file)
+  // transcript.value.text += text
+  // transcript.value.blob = combinedBlob
+  // console.log('onDataAvailable', text)
+  // transcript.value = {
+  //   blob,
+  //   text
+  // }
 }
 
-onMounted(() => {
-  getModelList()
+onMounted(async () => {
+  await getModelList()
+  selectedModel.value = models.value[0].id
   // updateTranscriptionProgress()
   // updateDownloadProgress()
   // getDownloadedModelsAndSaveInRef()
   // getRunningModelsAndSaveInRef()
 })
 
-function getModelList(): void {
+async function getModelList(): Promise<void> {
   console.log('getModelList')
-  window.asr.getModels().then((result) => {
-    if (result.length > 0) {
-      models.value = result
-      selectedModel.value = models.value[0].id
-      let index = result.findIndex((model) => model.downloadPath !== null)
-      if (index >= 0) {
-        console.log('index found', index)
-        isModelAvailable.value = true
-      }
+  const result = await window.asr.getModels()
+  if (result.length > 0) {
+    models.value = result
+    let index = result.findIndex((model) => model.downloadPath !== null)
+    if (index >= 0) {
+      console.log('index found', index)
+      isModelAvailable.value = true
     }
-  })
+  }
 }
 /**
  * start speech recording event
@@ -223,7 +253,7 @@ const onStartRecording = async (): Promise<void> => {
           numberOfAudioChannels: 1, // mono
           recorderType: StereoAudioRecorder,
           sampleRate: 44100, // Sample rate = 44.1khz
-          timeSlice: 1_000, // 1 sec
+          timeSlice: 500, // .5 sec
           type: 'audio',
           ondataavailable: onDataAvailable
         }
@@ -261,6 +291,7 @@ const onStartRecording = async (): Promise<void> => {
         id="select-model"
         v-model="selectedModel"
         :disabled="!isModelAvailable || isTranscribing"
+        @update:model-value="onSelectedModelChanged()"
       >
         <SelectTrigger class="w-[180px]">
           <SelectValue placeholder="Select Model" />
@@ -274,6 +305,15 @@ const onStartRecording = async (): Promise<void> => {
               :value="model.id"
             >
               {{ model.name }}
+              <span
+                :class="[
+                  model.loaded
+                    ? 'bg-green-400 forced-colors:bg-[Highlight]'
+                    : 'bg-gray-200 dark:bg-white/25',
+                  'inline-block size-2 shrink-0 rounded-full border border-transparent'
+                ]"
+                aria-hidden="true"
+              />
             </SelectItem>
           </SelectGroup>
         </SelectContent>

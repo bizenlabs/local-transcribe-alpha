@@ -118,6 +118,11 @@ function registerIPC(): void {
   registerDownloadIPC()
   registerServerIPC()
 
+  ipcMain.handle('asr:loadModel', async (_event, ...args) => {
+    console.log('asr:loadModel', args[0])
+    return modelService.loadModel(args[0])
+  })
+
   ipcMain.handle('asr:getModels', async () => {
     console.log('asr:getModels')
     return modelService.getAvailableModels()

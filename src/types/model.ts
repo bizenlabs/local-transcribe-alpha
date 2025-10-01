@@ -6,4 +6,5 @@ export type Model = {
   downloadPath?: string | null
   size?: string
   language?: string
+  loaded: boolean
 }

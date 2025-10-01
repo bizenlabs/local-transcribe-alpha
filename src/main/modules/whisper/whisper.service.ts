@@ -33,6 +33,7 @@ class WhisperService {
   private readonly modelsDirectoryPath: string = join(this.appDataDir, 'models')
 
   private models: Model[] = []
+  private loadedModel: Model | undefined = undefined
 
   private controller: AbortController
 
@@ -43,7 +44,20 @@ class WhisperService {
   }
 
   async getAvailableModels(): Promise<Model[]> {
+    this.updateLoadedModel()
     return Promise.resolve(this.models)
+  }
+
+  private updateLoadedModel(): void {
+    if (this.loadedModel) {
+      this.models.forEach((model) => {
+        model.loaded = this.loadedModel?.name === model.name
+      })
+    }
+  }
+
+  public async loadModel(model: Model): Promise<void> {
+    await this.startWhisperServer(model)
   }
 
   public async downloadDefaultModel(): Promise<void> {
@@ -51,6 +65,7 @@ class WhisperService {
   }
 
   async startWhisperServer(model?: Model, port = 8090): Promise<void> {
+    await this.stopWhisperServer()
     console.log('startWhisperServer')
     if (!model) {
       model = this.models[0]
@@ -66,6 +81,8 @@ class WhisperService {
     console.log('startWhisperServer command...', command)
 
     exec(command, { signal })
+    //TODO health check
+    this.loadedModel = model
     console.log('WhisperServer Started @ port: ', port)
   }
 

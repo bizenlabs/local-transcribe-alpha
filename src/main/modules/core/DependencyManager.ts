@@ -41,7 +41,7 @@ const windows_x64_dependencies: Dependency[] = [
     name: 'whisper',
     url: 'https://github.com/ggml-org/whisper.cpp/releases/download/v1.7.6/whisper-bin-x64.zip',
     fileName: 'whisper-bin-x64.zip',
-    destination: ollamaDest,
+    destination: whisperDest,
     binPath: path.join(appDataDir, 'bin', 'whisper', 'whisper-server.exe')
   },
   {

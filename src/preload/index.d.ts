@@ -24,6 +24,7 @@ declare global {
       openFile: () => Promise<string>
     }
     asr: {
+      loadModel: (model: Model) => Promise<void>
       getModels: () => Promise<Model[]>
       downloadModel: (model: Model) => Promise<DownloaderReport>
       transcribeFile: (audioFilePath: string, modelName: string) => Promise<string[]>

@@ -27,6 +27,8 @@ const api = {
 
 // ASR APIs for renderer
 const asr = {
+  loadModel: async (model: Model): Promise<void> =>
+    await ipcRenderer.invoke('asr:loadModel', model),
   getModels: () => ipcRenderer.invoke('asr:getModels'),
   downloadModel: async (model: Model): Promise<DownloaderReport> =>
     await ipcRenderer.invoke('asr:downloadModel', model),
