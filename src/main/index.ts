@@ -3,7 +3,7 @@ import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import electronUpdater, { type AppUpdater, UpdateCheckResult } from 'electron-updater'
-import { modelService } from './modules/whisper/whisper.service'
+import { whisperService } from './modules/whisper/whisper.service'
 import { downloadYT } from './utils/youTube'
 import { VideoProgress } from 'ytdlp-nodejs'
 
@@ -13,6 +13,11 @@ import Server from './server/server'
 // import kill from 'tree-kill'
 
 import startBackend from './modules/server/api'
+
+// import pkg from 'sqlite3'
+import { promisify } from 'util'
+
+import child_process from 'child_process'
 
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
@@ -67,6 +72,42 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+  const exec = promisify(child_process.exec)
+
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  async function getGitUser() {
+    // Exec output contains both stderr and stdout outputs
+    const nameOutput = await exec('git config --global user.name')
+    const emailOutput = await exec('git config --global user.email')
+
+    return {
+      name: nameOutput.stdout.trim(),
+      email: emailOutput.stdout.trim()
+    }
+  }
+  getGitUser().then((r) => console.log(r))
+
+  // function sqliteTest(): void {
+  //   const sqlite3 = verbose()
+  //   const db = new sqlite3.Database('localDb')
+  //
+  //   db.serialize(() => {
+  //     db.run('CREATE TABLE lorem (info TEXT)')
+  //
+  //     const stmt = db.prepare('INSERT INTO lorem VALUES (?)')
+  //     for (let i = 0; i < 10; i++) {
+  //       stmt.run('Ipsum ' + i)
+  //     }
+  //     stmt.finalize()
+  //
+  //     db.each('SELECT rowid AS id, info FROM lorem')
+  //   })
+  //
+  //   db.close()
+  //   console.log('Database created')
+  // }
+
+  // sqliteTest()
 
   getAutoUpdater()
     .checkForUpdatesAndNotify()
@@ -120,12 +161,12 @@ function registerIPC(): void {
 
   ipcMain.handle('asr:loadModel', async (_event, ...args) => {
     console.log('asr:loadModel', args[0])
-    return modelService.loadModel(args[0])
+    return whisperService.loadModel(args[0])
   })
 
   ipcMain.handle('asr:getModels', async () => {
     console.log('asr:getModels')
-    return modelService.getAvailableModels()
+    return whisperService.getAvailableModels()
   })
 
   ipcMain.handle('asr:startServer', async (_event, ...args) => {
@@ -149,18 +190,15 @@ function registerIPC(): void {
   //   return await modelService.transcribeFile(args[0], args[1])
   // })
 
-  ipcMain.handle('asr:file-whisper', async (event, ...args) => {
-    const onProgress = function (percentage: number): void {
-      event.sender.send('transcriptionProgress', percentage)
-    }
-    return await modelService.transcribeFileWhisper(args[0], args[1], args[2], args[3], onProgress)
+  ipcMain.handle('asr:file-whisper', async (_event, ...args) => {
+    return await whisperService.transcribeFile(args[0])
   })
 
   ipcMain.handle('asr:downloadModel', async (event, ...args) => {
     const onProgress = function (percentage: string): void {
       event.sender.send('modelDownloadProgress', percentage)
     }
-    return await modelService.downloadModel(args[0], onProgress)
+    return await whisperService.downloadModel(args[0], onProgress)
   })
 
   ipcMain.handle('asr:downloadYT', async (event, ...args) => {
@@ -174,23 +212,30 @@ function registerIPC(): void {
     const onProgress = function (percentage: string): void {
       event.sender.send('jdkProgress', percentage)
     }
-    return await dependencyManager.checkAndDownloadWhisper(onProgress)
+    return await dependencyManager.installWhisper(onProgress)
   })
 }
 
 function registerDownloadIPC(): void {
+  ipcMain.handle('download:brew', async (event) => {
+    const onProgress = function (percentage: string): void {
+      event.sender.send('brewProgress', percentage)
+    }
+    return await dependencyManager.installBrew(onProgress)
+  })
+
   ipcMain.handle('download:whisper', async (event) => {
     const onProgress = function (percentage: string): void {
       event.sender.send('whisperProgress', percentage)
     }
-    return await dependencyManager.checkAndDownloadWhisper(onProgress)
+    return await dependencyManager.installWhisper(onProgress)
   })
 
   ipcMain.handle('download:ollama', async (event) => {
     const onProgress = function (percentage: string): void {
       event.sender.send('ollamaProgress', percentage)
     }
-    return await dependencyManager.checkAndDownloadOllama(onProgress)
+    return await dependencyManager.installOllama(onProgress)
   })
 }
 
@@ -200,7 +245,7 @@ function registerServerIPC(): void {
   })
 
   ipcMain.handle('server:start:whisper', async () => {
-    return await modelService.startWhisperServer()
+    // return await modelService.startWhisperServer()
   })
 
   ipcMain.handle('server:start:ollama', async () => {

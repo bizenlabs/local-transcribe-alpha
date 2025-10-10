@@ -9,7 +9,8 @@ export const downloadFile = async (
     url,
     directory,
     cloneFiles: false,
-    onProgress
+    onProgress,
+    skipExistingFileName: true
   })
   return downloader.download()
 }

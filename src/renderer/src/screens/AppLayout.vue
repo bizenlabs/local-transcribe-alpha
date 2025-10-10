@@ -18,6 +18,7 @@ const breadcrumbs = {
   '/dependency-manager': ['System', 'Check'],
   '/audio-file-transcribe': ['Transcribe', 'File'],
   '/audio-realtime-transcribe': ['Transcribe', 'Realtime'],
+  '/audio-realtime-mediaapi': ['Transcribe', 'Realtime'],
   '/audio-model-manager': ['Models', 'Audio'],
   '/text-model-manager': ['Models', 'Text'],
   '/general-settings': ['Settings', 'General']

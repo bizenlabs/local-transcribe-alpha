@@ -5,10 +5,14 @@ import { WhisperParams } from '../types/whisperParameters'
 import { summarize } from "../main/summary/summary";
 import { downloadYT } from "../main/utils/youTube";
 import { VideoProgress } from "ytdlp-nodejs";
+import { Transcript } from "../main/modules/whisper/transcript.type";
 
 declare global {
   interface Window {
     download: {
+      brew: () => Promise<DownloaderReport>
+      brewProgress: (callback: (percentage: string) => void) => void,
+
       whisper: () => Promise<DownloaderReport>
       whisperProgress: (callback: (percentage: string) => void) => void,
 
@@ -27,13 +31,10 @@ declare global {
       loadModel: (model: Model) => Promise<void>
       getModels: () => Promise<Model[]>
       downloadModel: (model: Model) => Promise<DownloaderReport>
-      transcribeFile: (audioFilePath: string, modelName: string) => Promise<string[]>
+      transcribeFile: (audioFilePath: string) => Promise<Transcript>
       transcribeFileWhisper: (
-        audioFilePath: string,
-        modelName: string,
-        language: string,
-        params: WhisperParams
-      ) => Promise<string[]>
+        audioFilePath: string
+      ) => Promise<Transcript>
       onDownloadProgress: (callback: (percentage: string) => void) => void
       onTranscriptionProgress: (callback: (percentage: number) => void) => void
       summarize: (text: string, modelPath: string) => Promise<string>

@@ -58,6 +58,10 @@ const data = {
         {
           title: 'Realtime',
           url: 'audio-realtime-transcribe'
+        },
+        {
+          title: 'Realtime Media API',
+          url: 'audio-realtime-mediaapi'
         }
       ]
     },

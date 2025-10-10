@@ -7,11 +7,11 @@ export default defineConfig({
   main: {
     build: {
       rollupOptions: {
-        external: ['node_modules/ytdlp-nodejs']
+        external: ['node_modules/ytdlp-nodejs', 'sqlite3']
       }
     },
     plugins: [externalizeDepsPlugin()],
-    
+
   },
   preload: {
     plugins: [externalizeDepsPlugin()]

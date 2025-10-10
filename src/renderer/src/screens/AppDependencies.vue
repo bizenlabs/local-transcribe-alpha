@@ -18,26 +18,32 @@ import { store } from '@/lib/store'
 const steps = [
   {
     step: 1,
+    title: 'Utilities',
+    description: 'System utilities'
+  },
+  {
+    step: 2,
     title: 'Transcriber',
     description: 'Setting Transcriber'
   },
   {
-    step: 2,
+    step: 3,
     title: 'Youtube',
     description: 'Transcribe Youtube videos'
   },
   {
-    step: 3,
+    step: 4,
     title: 'Local AI ',
     description: 'Your Data, Your Control!'
   },
   {
-    step: 4,
+    step: 5,
     title: 'Knitting things up! ',
     description: 'Local Server'
   }
 ]
 
+const brewProgress = ref<number>(0)
 const whisperProgress = ref<number>(0)
 const ollamaProgress = ref<number>(0)
 const currentStep = ref<number>(1)
@@ -48,20 +54,35 @@ onMounted(async () => {
 
 async function setup(): Promise<void> {
   store.isDependenciesReady = false
+
+  await updateBrewDownloadProgress()
+  await downloadBrew()
+
   await updateWhisperDownloadProgress()
   await downloadWhisper()
-  await startWhisperServer()
 
   await updateYtDLPDownloadProgress()
   await downloadYtDLP()
 
   await updateOllamaDownloadProgress()
   await downloadOllama()
-  await startOllamaServer()
 
-  await startBackendServer()
+  await startWhisperServer()
+  await startOllamaServer()
   store.isDependenciesReady = true
   loadHomePage()
+}
+
+async function downloadBrew(): Promise<void> {
+  await window.download.brew()
+  currentStep.value += 1
+  console.log('Brew download complete')
+}
+
+async function updateBrewDownloadProgress(): Promise<void> {
+  window.download.brewProgress((percentage: string) => {
+    brewProgress.value = +percentage
+  })
 }
 
 async function updateWhisperDownloadProgress(): Promise<void> {
@@ -70,12 +91,10 @@ async function updateWhisperDownloadProgress(): Promise<void> {
   })
 }
 async function downloadWhisper(): Promise<void> {
-  currentStep.value += 1
   whisperProgress.value = 0
-  window.download.whisper().then(() => {
-    currentStep.value += 1
-    console.log('Whisper download complete')
-  })
+  window.download.whisper()
+  console.log('Whisper download complete')
+  currentStep.value += 1
 }
 
 async function updateOllamaDownloadProgress(): Promise<void> {
@@ -90,21 +109,19 @@ async function downloadOllama(): Promise<void> {
   console.log('Ollama download complete')
 }
 async function startOllamaServer(): Promise<void> {
-  await window.server.startOllama().then(() => {
-    console.log('Ollama Started!')
-  })
+  await window.server.startOllama()
+  console.log('Ollama Started!')
 }
 async function startWhisperServer(): Promise<void> {
-  await window.server.startWhisper().then(() => {
-    console.log('Whisper Started!')
-  })
+  await window.server.startWhisper()
+  console.log('Whisper Started!')
+  currentStep.value += 1
 }
 
-async function startBackendServer(): Promise<void> {
-  await window.server.startBackend().then(() => {
-    console.log('Backend Started!')
-  })
-}
+// async function startBackendServer(): Promise<void> {
+//   await window.server.startBackend()
+//   console.log('Backend Started!')
+// }
 
 async function updateYtDLPDownloadProgress(): Promise<void> {
   // window.download.ollamaProgress((percentage: string) => {

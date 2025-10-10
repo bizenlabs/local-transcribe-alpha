@@ -9,7 +9,10 @@ import {
   FolderPlus,
   Search,
   Trash,
-  TvMinimalPlay
+  TvMinimalPlay,
+  Rows4,
+  Scroll,
+  FileUp
 } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
@@ -39,17 +42,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn, millisToMinutesAndSeconds } from '@/lib/utils'
 import { languages } from '../../../../types/languageCodes'
-import { WhisperParams } from '../../../../types/whisperParameters'
 import { Badge } from '@/components/ui/badge'
 import VueMarkdown from 'vue-markdown-render'
 import MarkdownItAnchor from 'markdown-it-anchor'
-// import axios from 'axios'
+
 import { Input } from '@/components/ui/input'
 import { AlertDescription } from '@/components/ui/alert'
 import { VideoProgress } from 'ytdlp-nodejs'
 import ollama, { ModelResponse } from 'ollama/browser'
 import { isValidHttpUrl } from '@/utils/urlValidator'
 import ModelNotDownloaded from '@/screens/transcription/ModelNotDownloaded.vue'
+import { Transcript } from './transcript.type'
 
 const downloadedModels = ref<ModelResponse[]>([])
 const runningModels = ref<ModelResponse[]>([])
@@ -73,22 +76,18 @@ const heading = ref<string>('File Transcription')
 const filePath = ref('')
 const transcriptionTimestamp = ref<string[]>([])
 const transcription = ref<string>('')
+const transcript = ref<Transcript>()
 const summary = ref<string>()
 const isTranscribing = ref<boolean>(false)
 const isModelAvailable = ref<boolean>(false)
-const useGPU = ref<boolean>(true)
-// const isOpen = ref(false)
 
 const models = ref<Model[]>([])
 const selectedModel = ref<number>(0)
-// const selectedLLMModel = ref<number>(0)
 const transcriptionPercentage = ref<number>(0)
 const timeTakenToTranscribe = ref<string>('')
 const timeTakenToSummarize = ref<string>('')
 const youTubeUrl = ref<string>('')
 const isValidYouTubeUrl = ref<boolean>(true)
-const numberOfThreads = ref<number[] | undefined>([8])
-const numberOfProcessors = ref<number[] | undefined>([2])
 const isDownloadInProgress = ref<boolean>(false)
 const downloadPercentage = ref<number>(0)
 
@@ -96,29 +95,63 @@ const isOllamaSummarize = ref<boolean>(false)
 const lang = ref<(typeof languages)[0]>(languages[0])
 const plugins = [MarkdownItAnchor]
 const prompt = ref<string>('')
+const downloadUrl = ref<string>('')
 
-function getModelList(): void {
+const isModelLoading = ref<boolean>(false)
+const transcriptView = ref<'transcript' | 'segment'>('transcript')
+
+async function getModelList(): Promise<void> {
   console.log('getModelList')
-  window.asr.getModels().then((result) => {
-    if (result.length > 0) {
-      models.value = result
-      selectedModel.value = models.value[0].id
-      let index = result.findIndex((model) => model.downloadPath !== null)
-      if (index >= 0) {
-        console.log('index found', index)
-        isModelAvailable.value = true
-      }
+  const result = await window.asr.getModels()
+  if (result.length > 0) {
+    models.value = result
+    let index = result.findIndex((model) => model.downloadPath !== null)
+    if (index >= 0) {
+      console.log('index found', index)
+      isModelAvailable.value = true
     }
-  })
+  }
 }
 
-onMounted(() => {
-  getModelList()
+onMounted(async () => {
+  await getModelList()
+  selectedModel.value = models.value[0].id
   updateTranscriptionProgress()
   updateDownloadProgress()
-  getDownloadedModelsAndSaveInRef()
-  getRunningModelsAndSaveInRef()
+  await getDownloadedModelsAndSaveInRef()
+  await getRunningModelsAndSaveInRef()
 })
+
+function updateTranscriptionView(view: 'transcript' | 'segment'): void {
+  transcriptView.value = view
+  console.log('transcriptionView', view)
+  prepareDownloadUrl()
+}
+
+function prepareDownloadUrl(): void {
+  if (transcriptView.value === 'transcript') {
+    if (transcript.value?.text) {
+      let blob = new Blob([transcript.value?.text], { type: 'text/plain' })
+      downloadUrl.value = window.URL.createObjectURL(blob)
+      console.log('downloadUrl', downloadUrl.value)
+    }
+  }
+  if (transcriptView.value === 'segment') {
+    if (transcript.value && transcript.value.segments) {
+      let text = ''
+      transcript.value.segments.forEach((segment) => {
+        text += segment.start.toFixed(2) + '-' + segment.end.toFixed(2)
+        text += '\n'
+        text += segment.text
+        text += '\n'
+        console.log(text)
+      })
+      let blob = new Blob([text.replace(/\n/g, '\r\n')], { type: 'text/plain', endings: 'native' })
+      downloadUrl.value = window.URL.createObjectURL(blob)
+      console.log('seg text', text)
+    }
+  }
+}
 
 function updateDownloadProgress(): void {
   window.asr.onDownloadYTProgress((videoProgress: VideoProgress) => {
@@ -150,37 +183,18 @@ async function transcribeFileWhisper(): Promise<void> {
   transcriptionPercentage.value = 0
   timeTakenToTranscribe.value = ''
   transcription.value = ''
+  transcript.value = undefined
   summary.value = ''
   let model = models.value.find((model) => model.id === selectedModel.value)
   if (model && model.downloadPath) {
     const startTime = performance.now()
-    const params: WhisperParams = {
-      language: 'en',
-      model: 'modelPath',
-      fname_inp: 'convertedAudioFilePath',
-      use_gpu: useGPU.value,
-      flash_attn: false,
-      no_prints: true,
-      comma_in_time: false,
-      translate: true,
-      no_timestamps: true,
-      detect_language: false,
-      audio_ctx: 0,
-      max_len: 0,
-      n_threads: numberOfThreads.value ? numberOfThreads.value[0] : 2,
-      n_processors: numberOfProcessors.value ? numberOfProcessors.value[0] : 2
-    }
-    await window.asr
-      .transcribeFileWhisper(filePath.value, model.downloadPath, lang.value.value, params)
-      .then((result) => {
-        result.forEach((element) => {
-          if (element[2]) {
-            transcription.value += element[2]
-          }
-        })
-        transcriptionTimestamp.value = result
-        isTranscribing.value = false
-      })
+    await window.asr.transcribeFileWhisper(filePath.value).then((result) => {
+      transcript.value = result
+      transcription.value = result.text
+      transcriptionTimestamp.value = []
+      isTranscribing.value = false
+      prepareDownloadUrl()
+    })
     const endTime = performance.now()
     timeTakenToTranscribe.value = millisToMinutesAndSeconds(endTime - startTime)
   }
@@ -235,6 +249,16 @@ async function ollamaSummarize(): Promise<void> {
   isOllamaSummarize.value = false
   prompt.value = ''
 }
+async function onSelectedModelChanged(): Promise<void> {
+  isModelLoading.value = true
+  let model = models.value.find((t) => t.id === selectedModel.value)
+  if (model) {
+    console.log('loading selectedModel', model.name)
+    await window.asr.loadModel({ ...model })
+  }
+  await getModelList()
+  isModelLoading.value = false
+}
 </script>
 
 <template>
@@ -283,7 +307,6 @@ async function ollamaSummarize(): Promise<void> {
   </div>
 
   <section v-if="filePath" id="transcription">
-    <!--    <Label class="m-2 font-bold text-black">File</Label>-->
     <div class="flex items-center space-x-2 text-sm text-gray-500">
       <AudioLines class="inline" /> {{ filePath }}
       <Trash :size="18" class="ml-2 text-red-400 inline" @click="clearSelectedFile" />
@@ -296,7 +319,6 @@ async function ollamaSummarize(): Promise<void> {
     </div>
 
     <div v-if="models.length > 0 && isModelAvailable">
-      <!--      <Collapsible v-model:open="isOpen" class="w-[300px]"> </Collapsible>-->
       <br />
       <span v-if="isTranscribing">
         <Progress v-model="transcriptionPercentage" />
@@ -309,6 +331,7 @@ async function ollamaSummarize(): Promise<void> {
           id="select-model"
           v-model="selectedModel"
           :disabled="!isModelAvailable || isTranscribing"
+          @update:model-value="onSelectedModelChanged()"
         >
           <SelectTrigger class="w-[280px]">
             <SelectValue placeholder="Select Model" />
@@ -322,6 +345,15 @@ async function ollamaSummarize(): Promise<void> {
                 :value="model.id"
               >
                 {{ model.name }}
+                <span
+                  :class="[
+                    model.loaded
+                      ? 'bg-green-400 forced-colors:bg-[Highlight]'
+                      : 'bg-gray-200 dark:bg-white/25',
+                    'inline-block size-2 shrink-0 rounded-full border border-transparent'
+                  ]"
+                  aria-hidden="true"
+                />
               </SelectItem>
             </SelectGroup>
           </SelectContent>
@@ -377,25 +409,44 @@ async function ollamaSummarize(): Promise<void> {
   <!--  {{ transcription }}-->
 
   <section>
-    <div v-if="transcriptionTimestamp && transcriptionTimestamp.length > 0">
+    <div v-if="transcript">
       <Label class="font-bold text-black" for="select-model">
         Transcript:
         <span v-if="timeTakenToTranscribe"> ({{ timeTakenToTranscribe }} minutes)</span></Label
       >
+      <div class="flex items-center space-x-1 w-[280px] cursor-pointer mt-3">
+        <Badge variant="secondary" @click="updateTranscriptionView('transcript')">
+          Transcript <Scroll />
+        </Badge>
+        <Badge variant="secondary" @click="updateTranscriptionView('segment')">
+          Segments <Rows4 />
+        </Badge>
 
-      <ScrollArea class="h-[200px] rounded-md border p-4 mt-2">
-        <div
-          v-for="(snippet, index) in transcriptionTimestamp"
-          :key="index"
-          class="col-span-2 grid grid-cols-subgrid items-baseline"
-        >
-          <Badge variant="secondary"> {{ snippet[1].split('.')[0] }} </Badge>
-          <p class="text-sm/7 whitespace-pre-wrap text-gray-700 dark:text-gray-400">
-            {{ snippet[2] }}
+        <a :href="downloadUrl" download="transcript.txt">
+          <Badge variant="secondary"> Export <FileUp /> </Badge
+        ></a>
+      </div>
+
+      <ScrollArea class="h-[200px] rounded-md border p-4 mt-3">
+        <div v-if="transcriptView === 'transcript'">
+          <p class="text-sm/7 text-gray-700 dark:text-gray-400">
+            {{ transcript.text }}
           </p>
           <br />
         </div>
+        <div v-if="transcriptView === 'segment'">
+          <div v-for="seg in transcript.segments" :key="seg.id" class="flex flex-3">
+            <Badge variant="secondary">
+              {{ seg.start.toFixed(2) }} - {{ seg.end.toFixed(2) }}
+            </Badge>
+            <p class="text-sm/7 whitespace-pre-wrap text-gray-700 dark:text-gray-400">
+              {{ seg.text }}
+            </p>
+            <br />
+          </div>
+        </div>
       </ScrollArea>
+
       <br />
       <div v-if="summary">
         <Label class="font-bold text-black" for="select-model">

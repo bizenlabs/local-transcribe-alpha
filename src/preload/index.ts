@@ -2,10 +2,14 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import type { Model } from '../types/model'
-import { WhisperParams } from '../types/whisperParameters'
 import { VideoProgress } from 'ytdlp-nodejs'
+import { Transcript } from '../renderer/src/screens/transcription/transcript.type'
 
 const download = {
+  brew: async (): Promise<void> => await ipcRenderer.invoke('download:brew'),
+  brewProgress: (callback: (percentage: string) => void) =>
+    ipcRenderer.on('brewProgress', (_event, value) => callback(value)),
+
   whisper: async (): Promise<DownloaderReport> => await ipcRenderer.invoke('download:whisper'),
   whisperProgress: (callback: (percentage: string) => void) =>
     ipcRenderer.on('whisperProgress', (_event, value) => callback(value)),
@@ -35,13 +39,8 @@ const asr = {
   transcribeFile: async (audioFilePath: string, modelName: string): Promise<string[]> => {
     return await ipcRenderer.invoke('asr:file', audioFilePath, modelName)
   },
-  transcribeFileWhisper: async (
-    audioFilePath: string,
-    modelName: string,
-    language: string,
-    params: WhisperParams
-  ): Promise<string[]> => {
-    return await ipcRenderer.invoke('asr:file-whisper', audioFilePath, modelName, language, params)
+  transcribeFileWhisper: async (audioFilePath: string): Promise<Transcript> => {
+    return await ipcRenderer.invoke('asr:file-whisper', audioFilePath)
   },
   onDownloadProgress: (callback: (percentage: string) => void) =>
     ipcRenderer.on('modelDownloadProgress', (_event, value) => callback(value)),
@@ -51,11 +50,6 @@ const asr = {
 
   downloadYT: async (url: string): Promise<string> =>
     await ipcRenderer.invoke('asr:downloadYT', url),
-
-  downloadJDK: async (): Promise<DownloaderReport> => await ipcRenderer.invoke('asr:downloadJDK'),
-
-  onJDKDownloadProgress: (callback: (percentage: string) => void) =>
-    ipcRenderer.on('jdkDownloadProgress', (_event, value) => callback(value)),
 
   onTranscriptionProgress: (callback: (percentage: number) => void) =>
     ipcRenderer.on('transcriptionProgress', (_event, value) => callback(value)),

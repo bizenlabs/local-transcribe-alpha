@@ -1,4 +1,4 @@
-import path, { join } from 'path'
+import { join } from 'path'
 
 import storage from 'electron-json-storage'
 
@@ -6,25 +6,14 @@ import { modelsData } from './models'
 import type { Model } from '../../../types/model'
 
 import { convertToWavType } from '../../utils/fileConverter'
-import { createRequire } from 'node:module'
-import { promisify } from 'node:util'
+
 import { downloadFile } from '../../utils/fileDownloader'
 import { DownloaderReport } from 'nodejs-file-downloader'
-import { WhisperParams } from '../../../types/whisperParameters'
 import { app } from 'electron'
-import { exec } from 'node:child_process'
+import { ChildProcess, spawn } from 'node:child_process'
 import { dependencyManager } from '../core/DependencyManager'
-
-let binPath: string
-if (process.platform == 'darwin') {
-  binPath = path
-    .join(__dirname, '../../resources/bin/mac-whisper/addon.node')
-    .replace('app.asar', 'app.asar.unpacked')
-} else {
-  binPath = path
-    .join(__dirname, '../../resources/bin/windows/addon.node')
-    .replace('app.asar', 'app.asar.unpacked')
-}
+import { RawAxiosRequestHeaders } from 'axios'
+import { Transcript } from '../../../renderer/src/screens/transcription/transcript.type'
 
 class WhisperService {
   private static _instance: WhisperService
@@ -33,14 +22,23 @@ class WhisperService {
   private readonly modelsDirectoryPath: string = join(this.appDataDir, 'models')
 
   private models: Model[] = []
-  private loadedModel: Model | undefined = undefined
+  private loadedModel: Model | undefined
+  private readonly defaultModel: Model
 
-  private controller: AbortController
+  private wsProcess: ChildProcess | undefined
+  private readonly port: string
 
-  private constructor() {
+  private constructor(port = '8090') {
+    this.port = port
     this.syncSupportedModelsInStore()
     this.models = storage.getSync('models')
-    this.controller = new AbortController()
+
+    this.defaultModel = this.models[0]
+    this.startWhisperServer(this.defaultModel).then((process) => {
+      this.wsProcess = process
+      this.loadedModel = this.defaultModel
+      console.log('ws process updated')
+    })
   }
 
   async getAvailableModels(): Promise<Model[]> {
@@ -57,38 +55,48 @@ class WhisperService {
   }
 
   public async loadModel(model: Model): Promise<void> {
-    await this.startWhisperServer(model)
+    if (model.downloadPath) {
+      const body = new FormData()
+      body.append('model', model.downloadPath)
+      body.append('response_format', 'text')
+
+      const headers: RawAxiosRequestHeaders = {}
+      headers['Content-Type'] = 'multipart/form-data'
+
+      console.log('loading model: ', model.name)
+
+      const { default: axios } = await import('axios')
+      const response = await axios.post('http://127.0.0.1:8090/' + 'load', body, {
+        headers
+      })
+      console.log('model loaded: status ', model.name, response.status)
+      this.loadedModel = model
+    }
   }
 
-  public async downloadDefaultModel(): Promise<void> {
-    console.log('Downloaded default model...')
-  }
-
-  async startWhisperServer(model?: Model, port = 8090): Promise<void> {
+  async startWhisperServer(model: Model): Promise<ChildProcess> {
+    console.log('starting Whisper Server', model)
     await this.stopWhisperServer()
-    console.log('startWhisperServer')
-    if (!model) {
-      model = this.models[0]
-    }
     if (!model.downloadPath) {
-      await modelService.downloadModel(model)
+      await this.downloadModel(model)
     }
 
-    this.controller = new AbortController()
-    const { signal } = this.controller
+    const command = `"${dependencyManager.getWhisperPath()}"`
+    const commandArgs = ['--port', `${this.port}`, '-pp', '--model', `${model.downloadPath}`]
+    console.log('startWhisperServer command...', command, commandArgs)
 
-    const command = `"${dependencyManager.getWhisperPath()}"  --model "${model.downloadPath}" --port ${port}`
-    console.log('startWhisperServer command...', command)
+    const childProcess = spawn(dependencyManager.getWhisperPath(), commandArgs)
 
-    exec(command, { signal })
-    //TODO health check
-    this.loadedModel = model
-    console.log('WhisperServer Started @ port: ', port)
+    console.log('Whisper service started at port ' + this.port)
+    return childProcess
   }
 
   async stopWhisperServer(): Promise<void> {
-    this.controller.abort()
-    console.log('WhisperServer Stopped')
+    if (this.wsProcess) {
+      this.wsProcess.kill(0)
+      console.log('WhisperServer Stopped')
+      this.wsProcess = undefined
+    }
   }
 
   async downloadModel(
@@ -113,44 +121,28 @@ class WhisperService {
     return downloadReport
   }
 
-  async transcribeFileWhisper(
+  async transcribeFile(
     audioFilePath: string,
-    modelPath: string,
-    language: string,
-    params: WhisperParams,
-    progress_callback: (percentage: number) => void
-  ): Promise<string[]> {
-    console.log('Transcribing:', modelPath, audioFilePath, language)
-    console.log('Params:', params)
+    responseFormat = 'verbose_json'
+  ): Promise<Transcript> {
     const convertedAudioFilePath = await convertToWavType(audioFilePath)
-    console.log('convertedAudioFilePath:', convertedAudioFilePath)
-    const whisperParams = {
-      language,
-      model: modelPath,
-      fname_inp: convertedAudioFilePath,
-      use_gpu: params.use_gpu,
-      flash_attn: false,
-      no_prints: true,
-      comma_in_time: false,
-      translate: false,
-      no_timestamps: true,
-      detect_language: false,
-      audio_ctx: 0,
-      max_len: 0,
-      n_threads: params.n_threads,
-      n_processors: params.n_processors,
-      prompt: 'यह हिंदी प्रतिलेख है',
-      progress_callback
-    }
-    const require = createRequire(import.meta.url)
-    console.log('bin path', binPath)
-    let { whisper } = require(binPath)
-    const whisperAsync = promisify(whisper)
-    const result = await whisperAsync(whisperParams)
-    whisper = null
-    // console.log(result.transcription)
-    // await startServer()
-    return Promise.resolve(result.transcription)
+
+    const body = new FormData()
+    body.append('file', convertedAudioFilePath)
+    body.append('response_format', responseFormat)
+
+    const headers: RawAxiosRequestHeaders = {}
+    headers['Content-Type'] = 'multipart/form-data'
+
+    console.log('call before:')
+
+    const { default: axios } = await import('axios')
+    console.log('call before:')
+    const response = await axios.post<Transcript>('http://127.0.0.1:8090/' + 'inference', body, {
+      headers
+    })
+    console.log('response', response)
+    return response.data
   }
 
   public static get Instance(): WhisperService {
@@ -190,4 +182,4 @@ class WhisperService {
   }
 }
 
-export const modelService = WhisperService.Instance
+export const whisperService = WhisperService.Instance
