@@ -10,7 +10,7 @@ import { convertToWavType } from '../../utils/fileConverter'
 import { downloadFile } from '../../utils/fileDownloader'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import { app } from 'electron'
-import { ChildProcess, spawn } from 'node:child_process'
+import { ChildProcess, exec } from 'node:child_process'
 import { dependencyManager } from '../core/DependencyManager'
 import { RawAxiosRequestHeaders } from 'axios'
 import { Transcript } from '../../../types/transcript.type'
@@ -84,11 +84,13 @@ class WhisperService {
       await this.downloadModel(model)
     }
 
-    const command = `"${dependencyManager.getWhisperPath()}"`
-    const commandArgs = ['--port', `${this.port}`, '-pp', '--model', `${model.downloadPath}`]
-    console.log('startWhisperServer command...', command, commandArgs)
+    // const command = `"${dependencyManager.getWhisperPath()}"`
+    // const commandArgs = ['--port', `${this.port}`, '-pp', '--model', `${model.downloadPath}`]
 
-    this.wsProcess = spawn(dependencyManager.getWhisperPath(), commandArgs)
+    const command = `"${dependencyManager.getWhisperPath()}" --port ${this.port} --model "${model.downloadPath}"`
+    console.log(`start ${command}`)
+
+    this.wsProcess = exec(command)
 
     this.loadedModel = model
     console.log('Whisper service started at port ' + this.port)
