@@ -34,11 +34,6 @@ class WhisperService {
     this.models = storage.getSync('models')
 
     this.defaultModel = this.models[0]
-    this.startWhisperServer(this.defaultModel).then((process) => {
-      this.wsProcess = process
-      this.loadedModel = this.defaultModel
-      console.log('ws process updated')
-    })
   }
 
   async getAvailableModels(): Promise<Model[]> {
@@ -79,7 +74,7 @@ class WhisperService {
     }
   }
 
-  async startWhisperServer(model?: Model): Promise<ChildProcess> {
+  async startWhisperServer(model?: Model): Promise<void> {
     if (!model) {
       model = this.defaultModel
     }
@@ -93,10 +88,10 @@ class WhisperService {
     const commandArgs = ['--port', `${this.port}`, '-pp', '--model', `${model.downloadPath}`]
     console.log('startWhisperServer command...', command, commandArgs)
 
-    const childProcess = spawn(dependencyManager.getWhisperPath(), commandArgs)
+    this.wsProcess = spawn(dependencyManager.getWhisperPath(), commandArgs)
 
+    this.loadedModel = model
     console.log('Whisper service started at port ' + this.port)
-    return childProcess
   }
 
   async stopWhisperServer(): Promise<void> {
