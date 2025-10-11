@@ -14,6 +14,7 @@ import { ChildProcess, exec } from 'node:child_process'
 import { dependencyManager } from '../core/DependencyManager'
 import { RawAxiosRequestHeaders } from 'axios'
 import { Transcript } from '../../../types/transcript.type'
+import kill from 'tree-kill'
 
 class WhisperService {
   private static _instance: WhisperService
@@ -97,9 +98,10 @@ class WhisperService {
   }
 
   async stopWhisperServer(): Promise<void> {
-    if (this.wsProcess) {
-      this.wsProcess.kill(0)
-      console.log('WhisperServer Stopped')
+    const pid = this.wsProcess?.pid
+    if (pid) {
+      kill(pid)
+      console.log(`WhisperServer process killed: pid=${pid}`)
       this.wsProcess = undefined
     }
   }

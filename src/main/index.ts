@@ -8,9 +8,7 @@ import { downloadYT } from './utils/youTube'
 import { VideoProgress } from 'ytdlp-nodejs'
 
 import { dependencyManager } from './modules/core/DependencyManager'
-import Server from './server/server'
-
-// import kill from 'tree-kill'
+import { ollamaService } from './server/ollamaServer'
 
 import startBackend from './modules/server/api'
 
@@ -104,6 +102,13 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  whisperService.stopWhisperServer().then(() => {
+    console.log('App closing: whisper server stopped')
+  })
+  ollamaService.stopOllamaServer().then(() => {
+    console.log('App closing: ollama server stopped')
+  })
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
@@ -203,7 +208,7 @@ function registerServerIPC(): void {
 
   ipcMain.handle('server:start:ollama', async () => {
     // await startWhisperServer()
-    return await new Server().startOllamaServer().then(() => console.log('Backend started'))
+    return await ollamaService.startOllamaServer().then(() => console.log('Backend started'))
   })
 }
 //TODO only one dialog open
