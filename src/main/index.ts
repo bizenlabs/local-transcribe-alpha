@@ -15,9 +15,6 @@ import Server from './server/server'
 import startBackend from './modules/server/api'
 
 // import pkg from 'sqlite3'
-import { promisify } from 'util'
-
-import child_process from 'child_process'
 
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
@@ -72,42 +69,6 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-  const exec = promisify(child_process.exec)
-
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  async function getGitUser() {
-    // Exec output contains both stderr and stdout outputs
-    const nameOutput = await exec('git config --global user.name')
-    const emailOutput = await exec('git config --global user.email')
-
-    return {
-      name: nameOutput.stdout.trim(),
-      email: emailOutput.stdout.trim()
-    }
-  }
-  getGitUser().then((r) => console.log(r))
-
-  // function sqliteTest(): void {
-  //   const sqlite3 = verbose()
-  //   const db = new sqlite3.Database('localDb')
-  //
-  //   db.serialize(() => {
-  //     db.run('CREATE TABLE lorem (info TEXT)')
-  //
-  //     const stmt = db.prepare('INSERT INTO lorem VALUES (?)')
-  //     for (let i = 0; i < 10; i++) {
-  //       stmt.run('Ipsum ' + i)
-  //     }
-  //     stmt.finalize()
-  //
-  //     db.each('SELECT rowid AS id, info FROM lorem')
-  //   })
-  //
-  //   db.close()
-  //   console.log('Database created')
-  // }
-
-  // sqliteTest()
 
   getAutoUpdater()
     .checkForUpdatesAndNotify()
@@ -148,10 +109,6 @@ app.on('window-all-closed', () => {
   }
 })
 
-// function killPython() {
-//   kill(python.pid);
-// }
-
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
@@ -185,10 +142,6 @@ function registerIPC(): void {
   // })
 
   ipcMain.handle('dialog:openFile', handleFileOpen)
-
-  // ipcMain.handle('asr:file', async (_event, ...args) => {
-  //   return await modelService.transcribeFile(args[0], args[1])
-  // })
 
   ipcMain.handle('asr:file-whisper', async (_event, ...args) => {
     return await whisperService.transcribeFile(args[0])
@@ -245,7 +198,7 @@ function registerServerIPC(): void {
   })
 
   ipcMain.handle('server:start:whisper', async () => {
-    // return await modelService.startWhisperServer()
+    return await whisperService.startWhisperServer()
   })
 
   ipcMain.handle('server:start:ollama', async () => {

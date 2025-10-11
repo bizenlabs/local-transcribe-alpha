@@ -13,7 +13,7 @@ import { app } from 'electron'
 import { ChildProcess, spawn } from 'node:child_process'
 import { dependencyManager } from '../core/DependencyManager'
 import { RawAxiosRequestHeaders } from 'axios'
-import { Transcript } from '../../../renderer/src/screens/transcription/transcript.type'
+import { Transcript } from '../../../types/transcript.type'
 
 class WhisperService {
   private static _instance: WhisperService
@@ -53,6 +53,11 @@ class WhisperService {
       })
     }
   }
+  public async downloadDefaultModel(): Promise<void> {
+    const onProgress = (percentage: string): void => console.log('default progress', percentage)
+    await whisperService.downloadModel(modelsData[0], onProgress)
+    console.log('Downloaded default model...')
+  }
 
   public async loadModel(model: Model): Promise<void> {
     if (model.downloadPath) {
@@ -74,7 +79,10 @@ class WhisperService {
     }
   }
 
-  async startWhisperServer(model: Model): Promise<ChildProcess> {
+  async startWhisperServer(model?: Model): Promise<ChildProcess> {
+    if (!model) {
+      model = this.defaultModel
+    }
     console.log('starting Whisper Server', model)
     await this.stopWhisperServer()
     if (!model.downloadPath) {

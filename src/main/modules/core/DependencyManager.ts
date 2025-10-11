@@ -4,8 +4,6 @@ import { downloadFile } from '../../utils/fileDownloader'
 import fs from 'node:fs'
 
 import decompress from 'decompress'
-import { modelsData } from '../whisper/models'
-import { whisperService } from '../whisper/whisper.service'
 
 import { execSync } from 'child_process'
 
@@ -56,13 +54,26 @@ export class DependencyManager {
     return this._instance || (this._instance = new this())
   }
 
-  public async downloadDefaultModel(): Promise<void> {
-    const onProgress = (percentage: string): void => console.log('default progress', percentage)
-    await whisperService.downloadModel(modelsData[0], onProgress)
-    console.log('Downloaded default model...')
+  public getBrewPath(): string {
+    return macDependencies.brew.binPath
   }
 
-  //TODO check progress callback
+  public getWhisperPath(): string {
+    if (process.platform == 'darwin') {
+      return macDependencies.whisper.binPath
+    } else {
+      return winDependencies.whisper.binPath
+    }
+  }
+
+  public getOllamaPath(): string {
+    if (process.platform == 'darwin') {
+      return macDependencies.ollama.binPath
+    } else {
+      return winDependencies.ollama.binPath
+    }
+  }
+
   public async installBrew(onProgress: (percentage: string) => void): Promise<void> {
     if (process.platform == 'darwin') {
       if (this.checkIfFileExists(macDependencies.brew.binPath)) {
@@ -71,11 +82,10 @@ export class DependencyManager {
       }
       await downloadFile(macDependencies.brew.url, archivesDest, onProgress)
       console.log('download complete brew zip')
+      const downloadedArchivePath: string = path.join(archivesDest, macDependencies.brew.fileName)
+      await decompress(downloadedArchivePath, appBinDest)
+      console.log('decompressed brew: ', appBinDest)
     }
-
-    const downloadedArchivePath: string = path.join(archivesDest, macDependencies.brew.fileName)
-    await decompress(downloadedArchivePath, appBinDest)
-    console.log('decompressed brew: ', appBinDest)
   }
 
   public async installWhisper(onProgress: (percentage: string) => void): Promise<void> {
@@ -123,26 +133,6 @@ export class DependencyManager {
     const command = `"${this.getBrewPath()}" list ollama || "${this.getBrewPath()}" install ollama`
     execSync(command)
     console.log('DEP_INSTALLED', 'ollama')
-  }
-
-  public getBrewPath(): string {
-    return macDependencies.brew.binPath
-  }
-
-  public getWhisperPath(): string {
-    if (process.platform == 'darwin') {
-      return macDependencies.whisper.binPath
-    } else {
-      return winDependencies.whisper.binPath
-    }
-  }
-
-  public getOllamaPath(): string {
-    if (process.platform == 'darwin') {
-      return macDependencies.ollama.binPath
-    } else {
-      return winDependencies.ollama.binPath
-    }
   }
 
   private checkIfFileExists(filePath: string): boolean {

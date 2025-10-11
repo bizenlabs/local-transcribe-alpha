@@ -52,7 +52,7 @@ import { VideoProgress } from 'ytdlp-nodejs'
 import ollama, { ModelResponse } from 'ollama/browser'
 import { isValidHttpUrl } from '@/utils/urlValidator'
 import ModelNotDownloaded from '@/screens/transcription/ModelNotDownloaded.vue'
-import { Transcript } from './transcript.type'
+import { Transcript } from '../../../../types/transcript.type'
 
 const downloadedModels = ref<ModelResponse[]>([])
 const runningModels = ref<ModelResponse[]>([])

@@ -3,7 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { DownloaderReport } from 'nodejs-file-downloader'
 import type { Model } from '../types/model'
 import { VideoProgress } from 'ytdlp-nodejs'
-import { Transcript } from '../renderer/src/screens/transcription/transcript.type'
+import { Transcript } from '../types/transcript.type'
 
 const download = {
   brew: async (): Promise<void> => await ipcRenderer.invoke('download:brew'),
