@@ -12,7 +12,9 @@ import {
   TvMinimalPlay,
   Rows4,
   Scroll,
-  FileUp
+  FileUp,
+  FileText,
+  FileSpreadsheet
 } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
@@ -38,6 +40,16 @@ import {
   ComboboxList,
   ComboboxTrigger
 } from '@/components/ui/combobox'
+
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger
+} from '@/components/ui/navigation-menu'
+
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn, millisToMinutesAndSeconds } from '@/lib/utils'
@@ -53,6 +65,8 @@ import ollama, { ModelResponse } from 'ollama/browser'
 import { isValidHttpUrl } from '@/utils/urlValidator'
 import ModelNotDownloaded from '@/screens/transcription/ModelNotDownloaded.vue'
 import { Transcript } from '../../../../types/transcript.type'
+
+import * as pdfMake from 'pdfmake/build/pdfmake'
 
 const downloadedModels = ref<ModelResponse[]>([])
 const runningModels = ref<ModelResponse[]>([])
@@ -95,10 +109,24 @@ const isOllamaSummarize = ref<boolean>(false)
 const lang = ref<(typeof languages)[0]>(languages[0])
 const plugins = [MarkdownItAnchor]
 const prompt = ref<string>('')
-const downloadUrl = ref<string>('')
+
+const transcriptTxtDownloadUrl = ref<string>('')
+const transcriptPdfDownloadUrl = ref<string>('')
+const segmentTxtDownloadUrl = ref<string>('')
+const segmentPdfDownloadUrl = ref<string>('')
 
 const isModelLoading = ref<boolean>(false)
 const transcriptView = ref<'transcript' | 'segment'>('transcript')
+
+const robotoFont = {
+  Roboto: {
+    normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
+    bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
+    italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
+    bolditalics:
+      'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
+  }
+}
 
 async function getModelList(): Promise<void> {
   console.log('getModelList')
@@ -129,27 +157,49 @@ function updateTranscriptionView(view: 'transcript' | 'segment'): void {
 }
 
 function prepareDownloadUrl(): void {
-  if (transcriptView.value === 'transcript') {
-    if (transcript.value?.text) {
-      let blob = new Blob([transcript.value?.text], { type: 'text/plain' })
-      downloadUrl.value = window.URL.createObjectURL(blob)
-      console.log('downloadUrl', downloadUrl.value)
+  //Transcript
+  if (transcript.value?.text) {
+    //TXT Transcript
+    let blob = new Blob([transcript.value?.text], { type: 'text/plain' })
+    transcriptTxtDownloadUrl.value = window.URL.createObjectURL(blob)
+    console.log('transcriptTxtDownloadUrl', transcriptTxtDownloadUrl)
+    //PDF Transcript
+    const docDefinition = {
+      content: [transcript.value?.text]
     }
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition, undefined, robotoFont)
+    pdfDocGenerator.getBlob((blob: Blob) => {
+      const file = new Blob([blob], { type: 'application/octet-stream' })
+      transcriptPdfDownloadUrl.value = window.URL.createObjectURL(file)
+      console.log('transcriptPdfDownloadUrl', transcriptPdfDownloadUrl)
+    })
   }
-  if (transcriptView.value === 'segment') {
-    if (transcript.value && transcript.value.segments) {
-      let text = ''
-      transcript.value.segments.forEach((segment) => {
-        text += segment.start.toFixed(2) + '-' + segment.end.toFixed(2)
-        text += '\n'
-        text += segment.text
-        text += '\n'
-        console.log(text)
-      })
-      let blob = new Blob([text.replace(/\n/g, '\r\n')], { type: 'text/plain', endings: 'native' })
-      downloadUrl.value = window.URL.createObjectURL(blob)
-      console.log('seg text', text)
+
+  if (transcript.value && transcript.value.segments) {
+    //TXT Segments
+    let text = ''
+    transcript.value.segments.forEach((segment) => {
+      text += segment.start.toFixed(2) + '-' + segment.end.toFixed(2)
+      text += '\n'
+      text += segment.text
+      text += '\n'
+      console.log(text)
+    })
+    text = text.replace(/\n/g, '\r\n')
+    let blob = new Blob([text], { type: 'text/plain', endings: 'native' })
+    segmentTxtDownloadUrl.value = window.URL.createObjectURL(blob)
+    console.log('seg text', text)
+
+    //PDF Segments
+    const docDefinition = {
+      content: [text]
     }
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition, undefined, robotoFont)
+    pdfDocGenerator.getBlob((blob: Blob) => {
+      const file = new Blob([blob], { type: 'application/octet-stream' })
+      segmentPdfDownloadUrl.value = window.URL.createObjectURL(file)
+      console.log('transcriptPdfDownloadUrl', transcriptPdfDownloadUrl)
+    })
   }
 }
 
@@ -415,16 +465,92 @@ async function onSelectedModelChanged(): Promise<void> {
         <span v-if="timeTakenToTranscribe"> ({{ timeTakenToTranscribe }} minutes)</span></Label
       >
       <div class="flex items-center space-x-1 w-[280px] cursor-pointer mt-3">
-        <Badge variant="secondary" @click="updateTranscriptionView('transcript')">
+        <Badge
+          :variant="transcriptView === 'transcript' ? 'default' : 'secondary'"
+          @click="updateTranscriptionView('transcript')"
+        >
           Transcript <Scroll />
         </Badge>
-        <Badge variant="secondary" @click="updateTranscriptionView('segment')">
+        <Badge
+          :variant="transcriptView === 'segment' ? 'default' : 'secondary'"
+          @click="updateTranscriptionView('segment')"
+        >
           Segments <Rows4 />
         </Badge>
 
-        <a :href="downloadUrl" download="transcript.txt">
-          <Badge variant="secondary"> Export <FileUp /> </Badge
-        ></a>
+        <NavigationMenu>
+          <NavigationMenuList>
+            <NavigationMenuItem>
+              <NavigationMenuTrigger>
+                Export <FileUp class="px-1" :size="20"></FileUp>
+              </NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul class="grid w-[300px] gap-3 p-4 md:grid-cols-2">
+                  <li>
+                    <NavigationMenuLink as-child>
+                      <a
+                        :href="transcriptTxtDownloadUrl"
+                        download="transcript.txt"
+                        class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div class="flex flex-row text-sm font-medium leading-none">
+                          <FileText /> Transcript
+                        </div>
+                        <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                          text file
+                        </p>
+                      </a>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink as-child>
+                      <a
+                        :href="segmentTxtDownloadUrl"
+                        download="segments.txt"
+                        class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div class="flex flex-row text-sm font-medium leading-none">
+                          <FileSpreadsheet /> Segments
+                        </div>
+                        <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                          text file
+                        </p>
+                      </a>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink as-child>
+                      <a
+                        :href="transcriptPdfDownloadUrl"
+                        download="transcript.pdf"
+                        class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div class="flex flex-row text-sm font-medium leading-none">
+                          <FileText />Transcript
+                        </div>
+                        <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">pdf</p>
+                      </a>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink as-child>
+                      <a
+                        :href="segmentPdfDownloadUrl"
+                        download="segments.pdf"
+                        class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div class="flex flex-row text-sm font-medium leading-none">
+                          <FileSpreadsheet />Segments
+                        </div>
+                        <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">pdf</p>
+                      </a>
+                    </NavigationMenuLink>
+                  </li>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
       </div>
 
       <ScrollArea class="h-[200px] rounded-md border p-4 mt-3">
