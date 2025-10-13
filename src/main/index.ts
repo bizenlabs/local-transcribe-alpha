@@ -101,16 +101,19 @@ app.whenReady().then(() => {
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  whisperService.stopWhisperServer().then(() => {
+app.on('window-all-closed', async () => {
+  try {
+    await whisperService.stopWhisperServer()
     console.log('App closing: whisper server stopped')
-  })
-  ollamaService.stopOllamaServer().then(() => {
+    await ollamaService.stopOllamaServer()
     console.log('App closing: ollama server stopped')
-  })
-
-  if (process.platform !== 'darwin') {
+  } catch (error) {
+    console.error(error)
     app.quit()
+  } finally {
+    if (process.platform !== 'darwin') {
+      app.quit()
+    }
   }
 })
 
