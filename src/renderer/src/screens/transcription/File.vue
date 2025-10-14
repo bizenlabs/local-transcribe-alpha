@@ -14,7 +14,9 @@ import {
   Scroll,
   FileUp,
   FileText,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Mic,
+  CircleStop
 } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
@@ -67,13 +69,19 @@ import ModelNotDownloaded from '@/screens/transcription/ModelNotDownloaded.vue'
 import { Transcript } from '../../../../types/transcript.type'
 
 import * as pdfMake from 'pdfmake/build/pdfmake'
+import type { Options, RecordRTCPromisesHandler } from 'recordrtc'
+import { RawAxiosRequestHeaders } from 'axios'
 
 const downloadedModels = ref<ModelResponse[]>([])
 const runningModels = ref<ModelResponse[]>([])
 const selectedOllamaModel = ref<string>('llama3.2:3b')
 
 async function getDownloadedModelsAndSaveInRef(): Promise<void> {
-  downloadedModels.value = (await ollama.list()).models
+  try {
+    downloadedModels.value = (await ollama.list()).models
+  } catch (error) {
+    console.log(error)
+  }
   console.log('downloadedModels', downloadedModels.value)
 }
 
@@ -127,6 +135,138 @@ const robotoFont = {
       'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
   }
 }
+const audioDevices = ref<MediaDeviceInfo[]>([])
+const selectedAudioDeviceId = ref<string>()
+const stream = ref<MediaStream>()
+const recorder = ref<RecordRTCPromisesHandler>()
+const isRecording = ref<boolean>(false)
+
+async function setAudioDevices(): Promise<void> {
+  const mediaDevices: MediaDeviceInfo[] = await navigator.mediaDevices.enumerateDevices()
+  const devices = mediaDevices.filter(
+    (mediaDevice: MediaDeviceInfo) => mediaDevice.kind === 'audioinput'
+  )
+
+  if (devices.length > 0) {
+    audioDevices.value = devices
+    selectedAudioDeviceId.value = devices[0].deviceId
+  }
+  console.log('mediaDevices', mediaDevices)
+}
+
+const onStartStreaming = async (): Promise<void> => {
+  try {
+    if (stream.value) {
+      stream.value.getTracks().forEach((track) => track.stop())
+    }
+    stream.value = await navigator.mediaDevices.getUserMedia({
+      audio: true
+    })
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const onStartRecording = async (): Promise<void> => {
+  try {
+    if (!stream.value) {
+      await onStartStreaming()
+    }
+    if (stream.value) {
+      if (!recorder.value) {
+        const {
+          default: { RecordRTCPromisesHandler, StereoAudioRecorder }
+        } = await import('recordrtc')
+        const recorderConfig: Options = {
+          mimeType: 'audio/wav',
+          numberOfAudioChannels: 1,
+          recorderType: StereoAudioRecorder,
+          sampleRate: 44100,
+          type: 'audio'
+        }
+        recorder.value = new RecordRTCPromisesHandler(stream.value, recorderConfig)
+      }
+      const recordState = await recorder.value.getState()
+      if (recordState === 'inactive' || recordState === 'stopped') {
+        await recorder.value.startRecording()
+      }
+      if (recordState === 'paused') {
+        await recorder.value.resumeRecording()
+      }
+      isRecording.value = true
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const onStopRecording = async (): Promise<void> => {
+  try {
+    if (recorder.value) {
+      const recordState = await recorder.value.getState()
+      if (recordState === 'recording' || recordState === 'paused') {
+        await recorder.value.stopRecording()
+      }
+      if (stream.value) {
+        stream.value.getTracks().forEach((track) => track.stop())
+        stream.value = undefined
+      }
+      isRecording.value = false
+      await onTranscribing()
+      await recorder.value.destroy()
+      recorder.value = undefined
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const onTranscribing = async (): Promise<void> => {
+  console.log('transcribing speech')
+  try {
+    if (recorder.value) {
+      const recordState = await recorder.value.getState()
+      if (recordState === 'stopped') {
+        let blob = await recorder.value.getBlob()
+        const buffer = await blob.arrayBuffer()
+        console.log({ wav: buffer.byteLength })
+        console.log('blob.type', blob.type)
+
+        // const file = new File([blob], 'speech.wav', { type: 'audio/wav' })
+        // const audioContext = new AudioContext({
+        //   sampleRate: 16000
+        // })
+        // let x = await audioContext.decodeAudioData(buffer)
+
+        const file = new File([blob], 'speech.mp3')
+        // const file = new File(
+        //   [new Blob([x.getChannelData(0)], { type: 'audio/wav' })],
+        //   'speech.mp3'
+        // )
+        const body = new FormData()
+        body.append('file', file)
+        body.append('response_format', 'verbose_json')
+
+        const headers: RawAxiosRequestHeaders = {}
+        headers['Content-Type'] = 'multipart/form-data'
+
+        const { default: axios } = await import('axios')
+        console.log('call before:')
+        const response = await axios.post<Transcript>(
+          'http://127.0.0.1:8090/' + 'inference',
+          body,
+          {
+            headers
+          }
+        )
+        console.log('response:', response.data)
+        transcript.value = response.data
+      }
+    }
+  } catch (err) {
+    console.info(err)
+  }
+}
 
 async function getModelList(): Promise<void> {
   console.log('getModelList')
@@ -144,6 +284,7 @@ async function getModelList(): Promise<void> {
 onMounted(async () => {
   await getModelList()
   selectedModel.value = models.value[0].id
+  await setAudioDevices()
   updateTranscriptionProgress()
   updateDownloadProgress()
   await getDownloadedModelsAndSaveInRef()
@@ -274,8 +415,6 @@ async function ollamaSummarize(): Promise<void> {
   if (!prompt.value) {
     return
   }
-  // await getDownloadedModelsAndSaveInRef()
-  // await getRunningModelsAndSaveInRef()
   const userPrompt = prompt.value ? prompt.value : 'Please summarize the following text: '
   console.log('userPrompt', userPrompt)
   const startTime = performance.now()
@@ -286,7 +425,7 @@ async function ollamaSummarize(): Promise<void> {
     messages: [
       {
         role: 'user',
-        content: userPrompt + '  ' + transcription.value
+        content: userPrompt + '  ' + transcript.value?.text
       }
     ]
   })
@@ -352,6 +491,38 @@ async function onSelectedModelChanged(): Promise<void> {
         <AlertDescription v-if="youTubeUrl.trim() && !isValidYouTubeUrl" class="text-red-600">
           Invalid URL.
         </AlertDescription>
+      </div>
+      <div class="text-center mx-2">
+        <div class="flex items-center space-x-2 text-sm text-gray-500">
+          <div v-if="!isRecording" class="ml-3 mr-4">
+            <Mic class="mx-auto size-9 text-gray-300" @click="onStartRecording"></Mic>
+          </div>
+
+          <div v-if="isRecording" class="ml-3 mr-4">
+            <CircleStop class="mx-auto size-9 text-red-400" @click="onStopRecording" />
+          </div>
+        </div>
+        <Label class="m-2 font-bold text-black" for="select-model">Audio:</Label>
+        <Select
+          id="select-audio-device"
+          v-model="selectedAudioDeviceId"
+          :disabled="!isModelAvailable"
+        >
+          <SelectTrigger class="w-[180px]">
+            <SelectValue placeholder="Select Audio Device" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem
+                v-for="device in audioDevices"
+                :key="device.deviceId"
+                :value="device.deviceId"
+              >
+                {{ device.label }}
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   </div>
