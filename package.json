@@ -1,6 +1,6 @@
 {
   "name": "local-transcribe-alpha",
-  "version": "1.0.61",
+  "version": "1.0.62",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -46,6 +46,7 @@
     "contentful-rich-text-vue-renderer": "^3.2.0",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
+    "docx": "^9.5.1",
     "electron-dl": "^4.0.0",
     "electron-fetch": "^1.9.1",
     "electron-json-storage": "^4.6.0",

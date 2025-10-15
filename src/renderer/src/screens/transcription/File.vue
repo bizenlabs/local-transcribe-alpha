@@ -71,6 +71,7 @@ import { Transcript } from '../../../../types/transcript.type'
 import * as pdfMake from 'pdfmake/build/pdfmake'
 import type { Options, RecordRTCPromisesHandler } from 'recordrtc'
 import { RawAxiosRequestHeaders } from 'axios'
+import { Document, FileChild, Packer, Paragraph, TextRun } from 'docx'
 
 const downloadedModels = ref<ModelResponse[]>([])
 const runningModels = ref<ModelResponse[]>([])
@@ -120,8 +121,10 @@ const prompt = ref<string>('')
 
 const transcriptTxtDownloadUrl = ref<string>('')
 const transcriptPdfDownloadUrl = ref<string>('')
+const transcriptDocxDownloadUrl = ref<string>('')
 const segmentTxtDownloadUrl = ref<string>('')
 const segmentPdfDownloadUrl = ref<string>('')
+const segmentDocxDownloadUrl = ref<string>('')
 
 const isModelLoading = ref<boolean>(false)
 const transcriptView = ref<'transcript' | 'segment'>('transcript')
@@ -297,13 +300,14 @@ function updateTranscriptionView(view: 'transcript' | 'segment'): void {
   prepareDownloadUrl()
 }
 
-function prepareDownloadUrl(): void {
+async function prepareDownloadUrl(): Promise<void> {
   //Transcript
   if (transcript.value?.text) {
     //TXT Transcript
     let blob = new Blob([transcript.value?.text], { type: 'text/plain' })
     transcriptTxtDownloadUrl.value = window.URL.createObjectURL(blob)
     console.log('transcriptTxtDownloadUrl', transcriptTxtDownloadUrl)
+
     //PDF Transcript
     const docDefinition = {
       content: [transcript.value?.text]
@@ -314,19 +318,45 @@ function prepareDownloadUrl(): void {
       transcriptPdfDownloadUrl.value = window.URL.createObjectURL(file)
       console.log('transcriptPdfDownloadUrl', transcriptPdfDownloadUrl)
     })
+
+    //DOCX Transcript
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [new TextRun(transcript.value?.text)]
+            })
+          ]
+        }
+      ]
+    })
+    const docxBlob = await Packer.toBlob(doc)
+    const file = new Blob([docxBlob], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    })
+    transcriptDocxDownloadUrl.value = window.URL.createObjectURL(file)
+  }
+
+  function segmentText(): string {
+    if (transcript.value && transcript.value.segments) {
+      let text = ''
+      transcript.value.segments.forEach((segment) => {
+        text += segment.start.toFixed(2) + '-' + segment.end.toFixed(2)
+        text += '\n'
+        text += segment.text
+        text += '\n'
+        console.log(text)
+      })
+      return text.replace(/\n/g, '\r\n')
+    }
+    return ''
   }
 
   if (transcript.value && transcript.value.segments) {
     //TXT Segments
-    let text = ''
-    transcript.value.segments.forEach((segment) => {
-      text += segment.start.toFixed(2) + '-' + segment.end.toFixed(2)
-      text += '\n'
-      text += segment.text
-      text += '\n'
-      console.log(text)
-    })
-    text = text.replace(/\n/g, '\r\n')
+    let text = segmentText()
     let blob = new Blob([text], { type: 'text/plain', endings: 'native' })
     segmentTxtDownloadUrl.value = window.URL.createObjectURL(blob)
     console.log('seg text', text)
@@ -341,6 +371,36 @@ function prepareDownloadUrl(): void {
       segmentPdfDownloadUrl.value = window.URL.createObjectURL(file)
       console.log('transcriptPdfDownloadUrl', transcriptPdfDownloadUrl)
     })
+
+    //DOCX Segments
+    if (transcript.value && transcript.value.segments) {
+      let text = ''
+      let fileds: FileChild[] = []
+      transcript.value.segments.forEach((segment) => {
+        let tsChild: FileChild = new Paragraph({
+          children: [new TextRun(segment.start.toFixed(2) + '-' + segment.end.toFixed(2))]
+        })
+        fileds.push(tsChild)
+        let textChild: FileChild = new Paragraph({
+          children: [new TextRun(segment.text)]
+        })
+        fileds.push(textChild)
+        console.log(text)
+      })
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: fileds
+          }
+        ]
+      })
+      const docxBlob = await Packer.toBlob(doc)
+      const file = new Blob([docxBlob], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      })
+      segmentDocxDownloadUrl.value = window.URL.createObjectURL(file)
+    }
   }
 }
 
@@ -714,6 +774,34 @@ async function onSelectedModelChanged(): Promise<void> {
                           <FileSpreadsheet />Segments
                         </div>
                         <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">pdf</p>
+                      </a>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink as-child>
+                      <a
+                        :href="transcriptDocxDownloadUrl"
+                        download="transcript.docx"
+                        class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div class="flex flex-row text-sm font-medium leading-none">
+                          <FileText />Transcript
+                        </div>
+                        <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">docx</p>
+                      </a>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink as-child>
+                      <a
+                        :href="segmentDocxDownloadUrl"
+                        download="segments.docx"
+                        class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div class="flex flex-row text-sm font-medium leading-none">
+                          <FileSpreadsheet />Segments
+                        </div>
+                        <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">docx</p>
                       </a>
                     </NavigationMenuLink>
                   </li>
