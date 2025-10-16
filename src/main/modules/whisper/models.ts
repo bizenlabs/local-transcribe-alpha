@@ -68,7 +68,7 @@ export const modelsData: Model[] = [
   },
   {
     id: 8,
-    name: 'Distil Large v3 -hindi',
+    name: 'Distil Large v3',
     description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
     url: 'https://huggingface.co/distil-whisper/distil-large-v3-ggml/resolve/main/ggml-distil-large-v3.bin',
     downloadPath: null,
