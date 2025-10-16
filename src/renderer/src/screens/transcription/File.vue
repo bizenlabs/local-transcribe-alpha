@@ -126,6 +126,10 @@ const segmentTxtDownloadUrl = ref<string>('')
 const segmentPdfDownloadUrl = ref<string>('')
 const segmentDocxDownloadUrl = ref<string>('')
 
+const llmOutputTxtDownloadUrl = ref<string>('')
+const llmOutputPdfDownloadUrl = ref<string>('')
+const llmOutputDocxDownloadUrl = ref<string>('')
+
 const isModelLoading = ref<boolean>(false)
 const transcriptView = ref<'transcript' | 'segment'>('transcript')
 
@@ -298,6 +302,45 @@ function updateTranscriptionView(view: 'transcript' | 'segment'): void {
   transcriptView.value = view
   console.log('transcriptionView', view)
   prepareDownloadUrl()
+}
+
+async function prepareLLMOllamaDownloadUrl(): Promise<void> {
+  if (summary.value) {
+    //TXT LLM
+    let blob = new Blob([summary.value], { type: 'text/plain' })
+    llmOutputTxtDownloadUrl.value = window.URL.createObjectURL(blob)
+    console.log('llmOutputTxtDownloadUrl', llmOutputTxtDownloadUrl)
+
+    //PDF LLM
+    const docDefinition = {
+      content: [summary.value]
+    }
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition, undefined, robotoFont)
+    pdfDocGenerator.getBlob((blob: Blob) => {
+      const file = new Blob([blob], { type: 'application/octet-stream' })
+      llmOutputPdfDownloadUrl.value = window.URL.createObjectURL(file)
+      console.log('llmOutputPdfDownloadUrl', llmOutputPdfDownloadUrl)
+    })
+
+    //DOCX LLM
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [new TextRun(summary.value)]
+            })
+          ]
+        }
+      ]
+    })
+    const docxBlob = await Packer.toBlob(doc)
+    const file = new Blob([docxBlob], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    })
+    llmOutputDocxDownloadUrl.value = window.URL.createObjectURL(file)
+  }
 }
 
 async function prepareDownloadUrl(): Promise<void> {
@@ -495,6 +538,7 @@ async function ollamaSummarize(): Promise<void> {
   }
   const endTime = performance.now()
   timeTakenToSummarize.value = millisToMinutesAndSeconds(endTime - startTime)
+  await prepareLLMOllamaDownloadUrl()
   isOllamaSummarize.value = false
   prompt.value = ''
 }
@@ -834,10 +878,72 @@ async function onSelectedModelChanged(): Promise<void> {
 
       <br />
       <div v-if="summary">
-        <Label class="font-bold text-black" for="select-model">
-          Output:
-          <span v-if="timeTakenToSummarize"> ({{ timeTakenToSummarize }} minutes)</span>
-        </Label>
+        <div class="flex flex-row">
+          <Label class="font-bold text-black" for="select-model">
+            Output:
+            <span v-if="timeTakenToSummarize"> ({{ timeTakenToSummarize }} minutes)</span>
+          </Label>
+
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>
+                  Export <FileUp class="px-1" :size="20"></FileUp>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul class="grid w-[300px] gap-3 p-4 md:grid-cols-2">
+                    <li>
+                      <NavigationMenuLink as-child>
+                        <a
+                          :href="llmOutputTxtDownloadUrl"
+                          download="output.txt"
+                          class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <div class="flex flex-row text-sm font-medium leading-none">
+                            <FileText /> Text
+                          </div>
+                          <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            text file
+                          </p>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink as-child>
+                        <a
+                          :href="llmOutputPdfDownloadUrl"
+                          download="output.pdf"
+                          class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <div class="flex flex-row text-sm font-medium leading-none">
+                            <FileText />PDF
+                          </div>
+                          <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">pdf</p>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink as-child>
+                        <a
+                          :href="llmOutputDocxDownloadUrl"
+                          download="output.docx"
+                          class="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <div class="flex flex-row text-sm font-medium leading-none">
+                            <FileText />Word Doc
+                          </div>
+                          <p class="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            docx
+                          </p>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
 
         <ScrollArea class="h-[200px] rounded-md border p-4 mt-2">
           <vue-markdown
