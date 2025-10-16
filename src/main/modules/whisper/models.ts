@@ -63,7 +63,16 @@ export const modelsData: Model[] = [
     description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
     url: 'https://huggingface.co/kgidwani/hindi-large/resolve/main/large-ggml-model.bin',
     downloadPath: null,
-    size: '3,1 GB',
+    size: '3.1 GB',
+    loaded: false
+  },
+  {
+    id: 8,
+    name: 'Distil Large v3 -hindi',
+    description: 'Decent quality, smaller than Q4_K_S with similar performance, recommended..',
+    url: 'https://huggingface.co/distil-whisper/distil-large-v3-ggml/resolve/main/ggml-distil-large-v3.bin',
+    downloadPath: null,
+    size: '1.4 GB',
     loaded: false
   }
 ]
