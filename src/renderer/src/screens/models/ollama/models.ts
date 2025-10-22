@@ -202,5 +202,26 @@ export const modelsData: Model[] = [
       input: 'Text',
       isDefault: true
     }
+  },
+  {
+    id: 10,
+    name: 'medgemma-4b-it-GGUF',
+    description: 'BharatGPT',
+    showVariants: false,
+    defaultVariant: {
+      name: 'hf.co/unsloth/medgemma-4b-it-GGUF:Q4_K_M',
+      size: '2.36 GB',
+      context: '',
+      input: 'Text',
+      isDefault: true
+    },
+    variants: [
+      {
+        name: 'hf.co/unsloth/medgemma-4b-it-GGUF:IQ4_XS',
+        size: '2.38 GB',
+        context: '',
+        input: 'Text'
+      }
+    ]
   }
 ]
