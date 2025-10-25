@@ -26,6 +26,7 @@ declare global {
     },
     api: {
       openFile: () => Promise<string>
+      openImageFile: () => Promise<string>
     }
     asr: {
       loadModel: (model: Model) => Promise<void>

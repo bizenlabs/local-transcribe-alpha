@@ -56,6 +56,10 @@ const data = {
           url: 'audio-file-transcribe'
         },
         {
+          title: 'Medical File',
+          url: 'medical-file'
+        },
+        {
           title: 'Realtime',
           url: 'audio-realtime-transcribe'
         },

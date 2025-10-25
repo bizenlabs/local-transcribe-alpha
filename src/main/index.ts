@@ -150,6 +150,7 @@ function registerIPC(): void {
   // })
 
   ipcMain.handle('dialog:openFile', handleFileOpen)
+  ipcMain.handle('dialog:openImageFile', handleImageFileOpen)
 
   ipcMain.handle('asr:file-whisper', async (_event, ...args) => {
     return await whisperService.transcribeFile(args[0])
@@ -223,6 +224,22 @@ async function handleFileOpen(): Promise<string> {
         name: 'Audio Files',
         extensions: ['wav', 'mp3', 'flac', 'ogg', 'm4a', 'mp4']
         // extensions: ['wav', 'mp3', 'flac', 'ogg', 'm4a']
+      }
+    ]
+  })
+  if (!canceled) {
+    return filePaths[0]
+  }
+  return ''
+}
+
+async function handleImageFileOpen(): Promise<string> {
+  console.log('Opening file...')
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    filters: [
+      {
+        name: 'Image Files',
+        extensions: ['jpg', 'jpeg', 'dcm', 'png']
       }
     ]
   })

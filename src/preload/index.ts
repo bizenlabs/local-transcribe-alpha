@@ -26,7 +26,8 @@ const server = {
 
 // Custom APIs for renderer
 const api = {
-  openFile: () => ipcRenderer.invoke('dialog:openFile')
+  openFile: () => ipcRenderer.invoke('dialog:openFile'),
+  openImageFile: () => ipcRenderer.invoke('dialog:openImageFile')
 }
 
 // ASR APIs for renderer
