@@ -215,5 +215,19 @@ export const modelsData: Model[] = [
       input: 'Text',
       isDefault: true
     }
+  },
+  {
+    id: 11,
+    name: 'amsaravi/medgemma-4b-it:q8',
+    description: 'medgemma-4b-it-GGUF',
+    showVariants: false,
+    defaultVariant: {
+      name: 'amsaravi/medgemma-4b-it:q8',
+      size: '2.36 GB',
+      context: '',
+      input: 'Text',
+      isDefault: true
+    }
   }
 ]
+

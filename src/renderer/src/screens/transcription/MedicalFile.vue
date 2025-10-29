@@ -75,7 +75,7 @@ async function ollamaSummarize(): Promise<void> {
         }
       ]
     })
-
+    // summary.value = response.message.content
     for await (const part of response) {
       summary.value += part.message.content
     }
