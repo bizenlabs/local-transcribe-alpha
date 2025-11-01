@@ -228,6 +228,18 @@ export const modelsData: Model[] = [
       input: 'Text',
       isDefault: true
     }
+  },
+  {
+    id: 12,
+    name: 'alibayram/medgemma:27b',
+    description: 'medgemma:27b',
+    showVariants: false,
+    defaultVariant: {
+      name: 'alibayram/medgemma:27b',
+      size: '17 GB',
+      context: '',
+      input: 'Text',
+      isDefault: true
+    }
   }
 ]
-
