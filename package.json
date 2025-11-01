@@ -1,6 +1,6 @@
 {
   "name": "local-transcribe-alpha",
-  "version": "1.0.69",
+  "version": "1.0.70",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -44,6 +44,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "contentful-rich-text-vue-renderer": "^3.2.0",
+    "cross-spawn": "^7.0.6",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
     "docx": "^9.5.1",
@@ -56,6 +57,7 @@
     "extendable-media-recorder-wav-encoder": "^7.0.132",
     "fastify": "^5.6.1",
     "ffmpeg-static": "^5.2.0",
+    "fix-path": "^5.0.0",
     "get-port": "^7.1.0",
     "hark": "^1.2.3",
     "lamejs": "^1.2.1",
